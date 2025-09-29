@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OHPYNE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #171717; }
+        ::-webkit-scrollbar-thumb { background: #525252; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #737373; }
+        .chat-message p { word-wrap: break-word; }
+        input[type=range]::-webkit-slider-runnable-track { background: #404040; }
+        input[type=range]::-moz-range-track { background: #404040; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #fb923c;
+            cursor: pointer;
+            height: 1rem;
+            width: 1rem;
+            border-radius: 9999px;
+            margin-top: -4px;
+        }
+        input[type=range]::-moz-range-thumb {
+            background: #fb923c;
+            cursor: pointer;
+            height: 1rem;
+            width: 1rem;
+            border-radius: 9999px;
+            border: none;
+        }
+        .advanced-settings-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .advanced-settings-content.expanded {
+            max-height: 500px;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        #advanced-settings-toggle svg {
+            transition: transform 0.3s ease-in-out;
+        }
+        #advanced-settings-toggle.expanded svg {
+            transform: rotate(180deg);
+        }
+        .chat-history-item {
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .chat-history-item.active {
+            background-color: #f97316; /* amber-500 */
+        }
+        .collapsible-content {
+            max-height: 250px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease-out;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 4px;
+            padding: 8px;
+        }
+        .collapsible-content.expanded {
+            max-height: 1000px; /* Arbitrary large value to show all content */
+        }
+        .toggle-button {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding-top: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #d4d4d4; /* neutral-300 */
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .toggle-button:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-neutral-900 text-white antialiased">
+    <div class="flex flex-col md:flex-row h-screen">
+        <!-- Left Panel: Configuration -->
+        <div class="w-full md:w-1/3 lg:w-1/4 p-6 bg-neutral-800 border-r border-neutral-700 flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                 <div id="new-chat-button" class="flex items-center cursor-pointer" title="New Chat">
+                </div>
+                <button id="settings-button" class="p-2 rounded-md hover:bg-neutral-700 transition-colors">
+                     <svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-1.212l.27-.1a2.25 2.25 0 012.07 0l.27.1c.55.205 1.02.67 1.11 1.212l.12.693c.095.548.562 1.012 1.112 1.218l.27.1a2.25 2.25 0 010 2.07l-.27.1c-.55.205-1.02.67-1.11 1.212l-.12.693c-.09.548-.562 1.012-1.112 1.218l-.27.1a2.25 2.25 0 01-2.07 0l-.27-.1c-.55-.206-1.02-.67-1.11-1.218l-.12-.693c-.09-.542-.56-1.007-1.11-1.212l-.27-.1a2.25 2.25 0 010-2.07l.27-.1c.55-.205 1.02-.67 1.11-1.212l.12-.693z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Chat History -->
+            <div class="mb-4 flex-grow flex flex-col min-h-0 md:flex-1">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Chats</label>
+                <div id="chat-history-list" class="flex-1 overflow-y-auto bg-neutral-900/50 rounded-lg p-2 space-y-1">
+                    <!-- Chat history items will be populated here -->
+                </div>
+            </div>
+
+            <!-- Model Selection -->
+ <div class="mb-4">
+                <label for="model" class="block text-sm font-medium text-gray-300 mb-2">Model</label>
+                <select id="model" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <optgroup label="Tool Use Models">
+                        <option value="accounts/fireworks/models/firefunction-v2">firefunction-v2</option>
+                        <option value="accounts/fireworks/models/llama-v3p1-405b-instruct">llama-v3p1-405b-instruct</option>
+                        <option value="accounts/fireworks/models/llama-v3p1-70b-instruct">llama-v3p1-70b-instruct</option>
+                        <option value="accounts/fireworks/models/mixtral-8x22b-instruct">mixtral-8x22b-instruct</option>
+                    </optgroup>
+                    <optgroup label="General Models">
+                        <option value="accounts/fireworks/models/llama-v3p1-8b-instruct">llama-v3p1-8b-instruct</option>
+                        <option value="accounts/fireworks/models/llama-v3-70b-instruct">llama-v3-70b-instruct</option>
+                        <option value="accounts/fireworks/models/gpt-oss-120b">gpt-oss-120b</option>
+                        <option value="accounts/fireworks/models/qwen3-coder-480b-a35b-instruct">qwen3-coder-480b-a35b-instruct</option>
+                        <option value="accounts/01-ai/models/kimi-k2-instruct-0905">kimi-k2-instruct-0905</option>
+                        <option value="accounts/zhipu/models/glm-4.5-air">glm-4.5-air</option>
+                    </optgroup>
+                </select>
+                <p id="model-recommendation" class="text-xs text-gray-400 mt-1"></p>
+            </div>
+			
+            <!-- Tools Definition -->
+            <div class="flex-grow flex flex-col md:flex-1">
+                <label for="tools-select" class="block text-sm font-medium text-gray-300 mb-2">Tools</label>
+                <select id="tools-select" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="none">None</option>
+                    <option value="readFile" selected>Read File (Example)</option>
+                    <option value="analyzeData">Analyze Data (Example)</option>
+                    <option value="custom">Add Custom Tool...</option>
+                </select>
+
+                <div id="custom-tool-container" class="hidden mt-4 flex-1 flex flex-col">
+                    <label for="tools-definition-custom" class="block text-sm font-medium text-gray-300 mb-2">Custom Tool (JSON Array)</label>
+                    <textarea id="tools-definition-custom" class="w-full flex-1 bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Paste your tool definition JSON here..."></textarea>
+                    <p id="json-error" class="text-xs text-red-400 mt-1 hidden"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Chat Interface -->
+        <div class="flex-1 flex flex-col p-4 md:p-6 min-h-0 h-screen md:h-auto">
+            <div id="chat-container" class="flex-1 overflow-y-auto mb-4 pr-2 space-y-4">
+                <!-- Chat messages will be populated here -->
+            </div>
+            <div id="loading" class="hidden text-center my-4">
+                <div class="flex justify-center items-center space-x-2">
+                    <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" style="animation-delay: 0s;"></div>
+                    <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" style="animation-delay: 0.2s;"></div>
+                    <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" style="animation-delay: 0.4s;"></div>
+                </div>
+            </div>
+            <!-- Input Form -->
+            <div class="mt-auto">
+                <form id="chat-form" class="flex items-center bg-neutral-700 border border-neutral-600 rounded-lg">
+                    <input type="text" id="prompt-input" placeholder="Ask anything..." class="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-400 focus:outline-none">
+                     <button type="button" id="add-file-button" title="Add File" class="p-3 text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 00-4.242 0l-7 7a3 3 0 004.241 4.243h.001l.497-.5a.75.75 0 011.064 1.057l-.498.501-.002.002a4.5 4.5 0 01-6.364-6.364l7-7a4.5 4.5 0 016.368 6.36l-3.455 3.553A2.625 2.625 0 117.44 9.56l3.45-3.554a.75.75 0 111.06 1.062l-3.45 3.554a1.125 1.125 0 001.59 1.591l3.456-3.554a3 3 0 000-4.243z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                     <button type="button" id="send-context-button" title="Send Context" class="p-3 text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h5a1 1 0 000-2H3zM3 11a1 1 0 100 2h11a1 1 0 100-2H3zM3 15a1 1 0 100 2h5a1 1 0 100-2H3z" />
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L12 8.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-r-lg transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            <input type="file" id="file-input" class="hidden" accept=".txt,.js,.py,.html,.css,.json,.csv,.md">
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-neutral-800 rounded-lg shadow-xl p-8 w-full max-w-md border border-neutral-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-amber-400">Settings</h2>
+                <button id="close-settings-button" class="p-2 rounded-full hover:bg-neutral-700 transition-colors">
+                    <svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+             <!-- API Key -->
+            <div class="mb-6">
+                <label for="api-key" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
+                <input type="password" id="api-key" value="fw_XXXXXXXXXXXXX" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+
+            <!-- Export Chats -->
+            <div class="mb-2">
+                <button id="export-chats-button" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Export All Chats
+                </button>
+            </div>
+            
+            <!-- Import Chats -->
+            <div class="mb-6">
+                <button id="import-chats-button" class="w-full bg-neutral-600 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Import Chats
+                </button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+            </div>
+
+            <!-- Temperature -->
+            <div class="mb-6">
+                 <div class="flex justify-between items-center">
+                    <label for="temperature" class="block text-sm font-medium text-gray-300">Temperature</label>
+                    <span id="temperature-value" class="text-sm text-amber-400 font-mono">1.0</span>
+                </div>
+                <input type="range" id="temperature" min="0" max="2" step="0.1" value="1.0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+            </div>
+
+            <!-- Max Tokens -->
+             <div class="mb-6">
+                <div class="flex justify-between items-center">
+                    <label for="max-tokens" class="block text-sm font-medium text-gray-300">Max Tokens</label>
+                    <span id="max-tokens-value" class="text-sm text-amber-400 font-mono">1024</span>
+                </div>
+                <input type="range" id="max-tokens" min="1" max="16384" step="128" value="4096" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+            </div>
+
+            <!-- Advanced Settings -->
+            <div class="border-t border-neutral-700 pt-4">
+                <button id="advanced-settings-toggle" class="w-full flex justify-between items-center text-left text-lg font-semibold text-amber-400">
+                    <span>Advanced</span>
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div id="advanced-settings-content" class="advanced-settings-content">
+                    <!-- Top P -->
+                    <div class="mb-4">
+                         <div class="flex justify-between items-center">
+                            <label for="top-p" class="block text-sm font-medium text-gray-300">Top P</label>
+                            <span id="top-p-value" class="text-sm text-amber-400 font-mono">1.0</span>
+                        </div>
+                        <input type="range" id="top-p" min="0" max="1" step="0.01" value="1.0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+                    </div>
+                    <!-- Top K -->
+                    <div class="mb-4">
+                         <div class="flex justify-between items-center">
+                            <label for="top-k" class="block text-sm font-medium text-gray-300">Top K</label>
+                            <span id="top-k-value" class="text-sm text-amber-400 font-mono">40</span>
+                        </div>
+                        <input type="range" id="top-k" min="0" max="100" step="1" value="40" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+                    </div>
+                    <!-- Presence Penalty -->
+                    <div class="mb-4">
+                         <div class="flex justify-between items-center">
+                            <label for="presence-penalty" class="block text-sm font-medium text-gray-300">Presence Penalty</label>
+                            <span id="presence-penalty-value" class="text-sm text-amber-400 font-mono">0.0</span>
+                        </div>
+                        <input type="range" id="presence-penalty" min="-2" max="2" step="0.1" value="0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+                    </div>
+                    <!-- Frequency Penalty -->
+                    <div>
+                         <div class="flex justify-between items-center">
+                            <label for="frequency-penalty" class="block text-sm font-medium text-gray-300">Frequency Penalty</label>
+                            <span id="frequency-penalty-value" class="text-sm text-amber-400 font-mono">0.0</span>
+                        </div>
+                        <input type="range" id="frequency-penalty" min="-2" max="2" step="0.1" value="0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Model Metadata ---
+async function getAIResponse() {
+                loadingIndicator.classList.remove('hidden');
+                const currentApiKey = apiKeyInput.value;
+                if (!currentApiKey || currentApiKey === 'fw_XXXXXXXXXXXXX') {
+                    addMessageToUI('error', 'Please enter a valid Fireworks AI API key in the settings.');
+                    loadingIndicator.classList.add('hidden');
+                    return;
+                }
+
+                let tools = [];
+                 try {
+                    const selectedTool = toolsSelect.value;
+                    if (selectedTool === 'readFile') tools = readFileTool;
+                    else if (selectedTool === 'analyzeData') tools = analyzeDataTool;
+                    else if (selectedTool === 'custom') {
+                        const toolsText = toolsDefinitionCustomTextarea.value.trim();
+                        if(toolsText) tools = JSON.parse(toolsText);
+                    }
+                } catch (error) {
+                    addMessageToUI('error', 'Failed to parse Tools JSON. Please correct the format.');
+                    loadingIndicator.classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    const requestBody = {
+                        model: modelSelect.value,
+                        messages: conversationHistory,
+                        temperature: parseFloat(temperatureSlider.value),
+                        max_tokens: parseInt(maxTokensSlider.value, 10),
+                        top_p: parseFloat(topPSlider.value),
+                        top_k: parseInt(topKSlider.value, 10),
+                        presence_penalty: parseFloat(presencePenaltySlider.value),
+                        frequency_penalty: parseFloat(frequencyPenaltySlider.value),
+                    };
+                    
+                    // --- CORRECTED LOGIC ---
+                    // If tools are defined, add them to the request.
+                    // The old reference to modelData has been removed.
+                    if (tools.length > 0) {
+                        requestBody.tools = tools;
+                        requestBody.tool_choice = "auto";
+                    }
+                    
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${currentApiKey}`
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.fault ? errorData.fault.faultstring : `HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const aiMessage = data.choices[0].message;
+                    conversationHistory.push(aiMessage);
+                    saveChatContent(activeChatId, conversationHistory);
+
+                    if (aiMessage.tool_calls) {
+                         addToolCallToUI(aiMessage.tool_calls);
+                         const toolExecutionMessage = aiMessage.tool_calls.map(tc => 
+                            `Function: ${tc.function.name}\nArguments: ${tc.function.arguments}`
+                         ).join('\n\n');
+                         addMessageToUI('assistant', `The model has requested the following tool call(s). In a production application, you would now execute this function and return the result to the model.\n\n\`\`\`json\n${toolExecutionMessage}\n\`\`\``);
+
+                    } else if (aiMessage.content) {
+                         addMessageToUI('assistant', aiMessage.content);
+                    }
+
+                } catch (error) {
+                    addMessageToUI('error', `An error occurred: ${error.message}`);
+                    conversationHistory.pop(); // Remove the user's message if the call failed
+                    saveChatContent(activeChatId, conversationHistory);
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                }
+            }
+            // --- DOM element references ---
+            const settingsButton = document.getElementById('settings-button');
+            const closeSettingsButton = document.getElementById('close-settings-button');
+            const settingsModal = document.getElementById('settings-modal');
+            const modelSelect = document.getElementById('model');
+            const modelRecommendation = document.getElementById('model-recommendation');
+            const apiKeyInput = document.getElementById('api-key');
+            
+            // Tools
+            const toolsSelect = document.getElementById('tools-select');
+            const customToolContainer = document.getElementById('custom-tool-container');
+            const toolsDefinitionCustomTextarea = document.getElementById('tools-definition-custom');
+            const jsonError = document.getElementById('json-error');
+            
+            // Sliders
+            const temperatureSlider = document.getElementById('temperature');
+            const temperatureValue = document.getElementById('temperature-value');
+            const maxTokensSlider = document.getElementById('max-tokens');
+            const maxTokensValue = document.getElementById('max-tokens-value');
+
+            // Advanced Settings
+            const advancedSettingsToggle = document.getElementById('advanced-settings-toggle');
+            const advancedSettingsContent = document.getElementById('advanced-settings-content');
+            const topPSlider = document.getElementById('top-p');
+            const topPValue = document.getElementById('top-p-value');
+            const topKSlider = document.getElementById('top-k');
+            const topKValue = document.getElementById('top-k-value');
+            const presencePenaltySlider = document.getElementById('presence-penalty');
+            const presencePenaltyValue = document.getElementById('presence-penalty-value');
+            const frequencyPenaltySlider = document.getElementById('frequency-penalty');
+            const frequencyPenaltyValue = document.getElementById('frequency-penalty-value');
+            
+            // Chat
+            const chatContainer = document.getElementById('chat-container');
+            const chatForm = document.getElementById('chat-form');
+            const promptInput = document.getElementById('prompt-input');
+            const loadingIndicator = document.getElementById('loading');
+            const addFileButton = document.getElementById('add-file-button');
+            const fileInput = document.getElementById('file-input');
+            const newChatButton = document.getElementById('new-chat-button');
+            const sendContextButton = document.getElementById('send-context-button');
+            const chatHistoryList = document.getElementById('chat-history-list');
+            const exportChatsButton = document.getElementById('export-chats-button');
+
+            const API_URL = 'https://api.fireworks.ai/inference/v1/chat/completions';
+            let conversationHistory = [];
+            let activeChatId = null;
+			let fileContentForSubmission = null;
+            
+            // --- Tool Definitions ---
+            const readFileTool = [{"type":"function","function":{"name":"readFile","description":"Reads the contents of a specified text file.","parameters":{"type":"object","properties":{"filename":{"type":"string","description":"The path to the text file to be read."}},"required":["filename"]}}}];
+            const analyzeDataTool = [{"type":"function","function":{"name":"analyzeData","description":"Analyzes a structured data file (e.g., CSV, JSON) and returns key insights.","parameters":{"type":"object","properties":{"filename":{"type":"string","description":"The path to the data file to be analyzed."},"analysis_type":{"type":"string","enum":["summary","correlation","trends"],"description":"The type of analysis to perform."}},"required":["filename","analysis_type"]}}}];
+            
+            // --- Local Storage Functions ---
+            const getSavedChats = () => JSON.parse(localStorage.getItem('fireworks_chats')) || [];
+            const saveChats = (chats) => localStorage.setItem('fireworks_chats', JSON.stringify(chats));
+            const getChatContent = (chatId) => JSON.parse(localStorage.getItem(chatId)) || [];
+            const saveChatContent = (chatId, content) => localStorage.setItem(chatId, JSON.stringify(content));
+            const saveApiKey = (key) => localStorage.setItem('fireworks_api_key', key);
+            const loadApiKey = () => localStorage.getItem('fireworks_api_key');
+
+			function loadChatList() {
+                const chats = getSavedChats();
+                chatHistoryList.innerHTML = '';
+
+                if (chats.length === 0) {
+                    // Ensure a new chat is created if the list becomes empty
+                    if (!activeChatId) startNewChat(); 
+                    return;
+                }
+                
+                chats.sort((a, b) => b.id - a.id).forEach(chat => {
+                    const item = document.createElement('div');
+                    // Use flex to align the name and the delete button
+                    item.className = 'chat-history-item flex justify-between items-center text-sm p-2 rounded-md hover:bg-neutral-700';
+                    if (chat.id === activeChatId) {
+                        item.classList.add('active');
+                    }
+
+                    // Chat name
+                    const chatName = document.createElement('span');
+                    chatName.textContent = chat.name;
+                    chatName.className = 'truncate'; // Prevent long names from breaking layout
+                    item.appendChild(chatName);
+
+                    // Add delete icon only for the active chat
+                    if (chat.id === activeChatId) {
+                        const deleteButton = document.createElement('button');
+                        deleteButton.className = 'p-1 rounded-full hover:bg-neutral-600';
+                        deleteButton.title = 'Delete chat';
+                        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>`;
+                        
+                        deleteButton.addEventListener('click', (e) => {
+                            // Stop the click from propagating to the parent div's loadChat event
+                            e.stopPropagation(); 
+                            deleteChat(chat.id);
+                        });
+                        item.appendChild(deleteButton);
+                    }
+
+                    item.dataset.chatId = chat.id;
+                    item.addEventListener('click', () => {
+                        if (chat.id !== activeChatId) { // Prevent redundant loading
+                           loadChat(chat.id);
+                        }
+                    });
+
+                    chatHistoryList.appendChild(item);
+                });
+            }
+			
+			function deleteChat(chatIdToDelete) {
+                // Add a confirmation dialog before deleting
+                if (!confirm('Are you sure you want to delete this chat?')) {
+                    return;
+                }
+
+                // Remove the chat content from storage
+                localStorage.removeItem(chatIdToDelete);
+
+                // Get the current list of chats and filter out the deleted one
+                let chats = getSavedChats();
+                const updatedChats = chats.filter(chat => chat.id !== chatIdToDelete);
+                saveChats(updatedChats);
+
+                // Check if any chats remain
+                if (updatedChats.length > 0) {
+                    // Load the most recent remaining chat
+                    const nextChatId = updatedChats.sort((a,b) => b.id - a.id)[0].id;
+                    loadChat(nextChatId);
+                } else {
+                    // If no chats are left, start a new one
+                    startNewChat();
+                }
+            }
+			
+            function loadChat(chatId) {
+                activeChatId = chatId;
+                conversationHistory = getChatContent(chatId);
+                chatContainer.innerHTML = '';
+                conversationHistory.forEach(msg => {
+                     if (msg.role === 'user') addMessageToUI('user', msg.content);
+                     else if (msg.role === 'assistant') {
+                         if (msg.tool_calls) addToolCallToUI(msg.tool_calls);
+                         if (msg.content) addMessageToUI('assistant', msg.content);
+                     }
+                });
+                loadChatList();
+            }
+            
+            function startNewChat() {
+                const chats = getSavedChats();
+                const newChatId = Date.now();
+                const newChatName = `Chat ${new Date(newChatId).toLocaleString()}`;
+                
+                chats.push({ id: newChatId, name: newChatName });
+                saveChats(chats);
+
+                activeChatId = newChatId;
+                conversationHistory = [{ role: 'system', content: 'You are a helpful assistant. When a user asks you to use a tool, you must use the provided tool.' }];
+                saveChatContent(activeChatId, conversationHistory);
+                
+                chatContainer.innerHTML = '';
+                addMessageToUI('assistant', 'New chat started. Ask me anything!');
+                
+				chatHistoryList.innerHTML = ''; 
+                loadChatList();
+            }
+
+            // --- Event Listeners ---
+            settingsButton.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+            closeSettingsButton.addEventListener('click', () => settingsModal.classList.add('hidden'));
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) settingsModal.classList.add('hidden');
+            });
+            
+            apiKeyInput.addEventListener('change', () => saveApiKey(apiKeyInput.value));
+
+            newChatButton.addEventListener('click', startNewChat);
+            
+            exportChatsButton.addEventListener('click', () => {
+                const chats = getSavedChats();
+                if (chats.length === 0) {
+                    alert("No chats to export.");
+                    return;
+                }
+                
+                const allData = {
+                    chats: chats,
+                    chatContents: {}
+                };
+
+                chats.forEach(chatMeta => {
+                    allData.chatContents[chatMeta.id] = getChatContent(chatMeta.id);
+                });
+
+                const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fireworks_chats_export_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            addFileButton.addEventListener('click', () => fileInput.click());
+            
+			fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Tool Auto-Selection Logic
+                const fileName = file.name.toLowerCase();
+                if (fileName.endsWith('.csv') || fileName.endsWith('.json')) {
+                    toolsSelect.value = 'analyzeData';
+                } else {
+                    toolsSelect.value = 'readFile';
+                }
+                toolsSelect.dispatchEvent(new Event('change'));
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Store the actual file content in our temporary variable
+                    fileContentForSubmission = e.target.result;
+                    
+                    // Add a user-friendly placeholder to the input instead of the full text
+                    const placeholder = `[File Attached: ${file.name}]\n`;
+                    promptInput.value = placeholder + promptInput.value;
+                    promptInput.focus();
+                };
+                reader.onerror = () => addMessageToUI('error', `Failed to read file: ${reader.error}`);
+                reader.readAsText(file);
+                event.target.value = null;
+            });            sendContextButton.addEventListener('click', () => {
+                const userAndAssistantHistory = conversationHistory.filter(msg => msg.role === 'user' || msg.role === 'assistant');
+                let chatText = userAndAssistantHistory.map(msg => {
+                    const prefix = msg.role.charAt(0).toUpperCase() + msg.role.slice(1);
+                    let content = msg.tool_calls ? `[Requested Tool Call: ${msg.tool_calls[0].function.name}]` : msg.content;
+                    return `${prefix}: ${content}`;
+                }).join('\n');
+                promptInput.value = `CONTEXT of the previous conversation:\n-------------------------------------\n${chatText}\n-------------------------------------\nBased on the context above, please continue the conversation or answer the following: `;
+                promptInput.focus();
+            });
+            
+            advancedSettingsToggle.addEventListener('click', () => {
+                advancedSettingsContent.classList.toggle('expanded');
+                advancedSettingsToggle.classList.toggle('expanded');
+            });
+
+            toolsSelect.addEventListener('change', () => {
+                customToolContainer.classList.toggle('hidden', toolsSelect.value !== 'custom');
+            });
+
+
+            const setupSlider = (slider, display) => slider.addEventListener('input', () => {
+                const value = parseFloat(slider.value);
+                display.textContent = Number.isInteger(value) ? value : value.toFixed(1);
+            });
+            setupSlider(temperatureSlider, temperatureValue);
+            setupSlider(maxTokensSlider, maxTokensValue);
+            setupSlider(topPSlider, topPValue);
+            setupSlider(topKSlider, topKValue);
+            setupSlider(presencePenaltySlider, presencePenaltyValue);
+            setupSlider(frequencyPenaltySlider, frequencyPenaltyValue);
+
+            toolsDefinitionCustomTextarea.addEventListener('input', () => {
+                const toolsText = toolsDefinitionCustomTextarea.value.trim();
+                if (!toolsText) { jsonError.classList.add('hidden'); return; }
+                try {
+                    JSON.parse(toolsText);
+                    jsonError.classList.add('hidden');
+                } catch (error) {
+                    jsonError.textContent = 'Invalid JSON format.';
+                    jsonError.classList.remove('hidden');
+                }
+            });
+
+			chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userInput = promptInput.value.trim();
+                if (!userInput) return;
+
+                let messageForUI = userInput;
+                let messageForAI = userInput;
+
+                if (fileContentForSubmission) {
+                    // Find the placeholder text, e.g., "[File Attached: data.csv]"
+                    const filePlaceholderMatch = userInput.match(/^\[File Attached: (.*?)\]\n?/);
+                    
+                    if (filePlaceholderMatch) {
+                        const fileName = filePlaceholderMatch[1];
+                        // Construct the full message for the AI model
+                        const contextHeader = `\n--- CONTENT FROM ${fileName} ---\n`;
+                        const fileFooter = "\n--- END OF FILE ---\n\n";
+                        const textWithoutPlaceholder = userInput.replace(filePlaceholderMatch[0], '');
+
+                        messageForAI = contextHeader + fileContentForSubmission + fileFooter + textWithoutPlaceholder;
+                    }
+                }
+
+                // Show the clean version in the UI
+                addMessageToUI('user', messageForUI);
+                // Send the full version (with file content) to the AI
+                conversationHistory.push({ role: 'user', content: messageForAI });
+                
+                saveChatContent(activeChatId, conversationHistory);
+                promptInput.value = '';
+                fileContentForSubmission = null; // <-- Reset the file content after sending
+                await getAIResponse();
+            });			
+
+
+            // --- Core API Logic ---
+            async function getAIResponse() {
+                loadingIndicator.classList.remove('hidden');
+                const currentApiKey = apiKeyInput.value;
+                if (!currentApiKey || currentApiKey === 'fw_XXXXXXXXXXXXX') {
+                    addMessageToUI('error', 'Please enter a valid Fireworks AI API key in the settings.');
+                    loadingIndicator.classList.add('hidden');
+                    return;
+                }
+
+                let tools = [];
+                 try {
+                    const selectedTool = toolsSelect.value;
+                    if (selectedTool === 'readFile') tools = readFileTool;
+                    else if (selectedTool === 'analyzeData') tools = analyzeDataTool;
+                    else if (selectedTool === 'custom') {
+                        const toolsText = toolsDefinitionCustomTextarea.value.trim();
+                        if(toolsText) tools = JSON.parse(toolsText);
+                        else {
+                             addMessageToUI('error', 'Custom tool selected, but no JSON was provided.');
+                             loadingIndicator.classList.add('hidden');
+                             return;
+                        }
+                    }
+                } catch (error) {
+                    addMessageToUI('error', 'Failed to parse Tools JSON. Please correct the format.');
+                    loadingIndicator.classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    const requestBody = {
+                        model: modelSelect.value,
+                        messages: conversationHistory,
+                        temperature: parseFloat(temperatureSlider.value),
+                        max_tokens: parseInt(maxTokensSlider.value, 10),
+                        top_p: parseFloat(topPSlider.value),
+                        top_k: parseInt(topKSlider.value, 10),
+                        presence_penalty: parseFloat(presencePenaltySlider.value),
+                        frequency_penalty: parseFloat(frequencyPenaltySlider.value),
+                    };
+                    
+
+                    
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${currentApiKey}`
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.fault ? errorData.fault.faultstring : `HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const aiMessage = data.choices[0].message;
+                    conversationHistory.push(aiMessage);
+                    saveChatContent(activeChatId, conversationHistory);
+
+                    if (aiMessage.tool_calls) {
+                         addToolCallToUI(aiMessage.tool_calls);
+                         addMessageToUI('assistant', `The model wants to call ${aiMessage.tool_calls.length} tool(s). In a real app, you would execute the tool and send the results back to the model.`);
+                    } else if (aiMessage.content) {
+                         addMessageToUI('assistant', aiMessage.content);
+                    }
+
+                } catch (error) {
+                    addMessageToUI('error', `An error occurred: ${error.message}`);
+                    conversationHistory.pop(); // Remove the user's message if the call failed
+                    saveChatContent(activeChatId, conversationHistory);
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                }
+            }
+            
+            // --- UI Rendering ---
+            function createMessageElement(sender, content) {
+                const messageWrapper = document.createElement('div');
+                messageWrapper.className = 'chat-message flex items-start';
+                let avatarHTML, contentHTML;
+                
+                if (sender === 'user') {
+                    messageWrapper.classList.add('justify-end');
+                    avatarHTML = `<div class="bg-neutral-600 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold ml-3 order-2">U</div>`;
+                    
+                    const fileMatch = content.match(/^\[File Attached: (.*?)\]\n?(.*)$/s);
+
+                    if (fileMatch) {
+                        const fileName = fileMatch[1];
+                        const accompanyingText = fileMatch[2];
+                        
+                        // Create a special UI for file attachments
+                        contentHTML = `
+                            <div class="bg-amber-600 rounded-lg p-3 max-w-lg">
+                                <div class="flex items-center gap-3 bg-amber-700/50 p-2 rounded-md">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-200 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span class="text-white font-medium truncate">${fileName}</span>
+                                </div>`;
+
+                        if (accompanyingText) {
+                           contentHTML += `<p class="text-white pt-3">${accompanyingText}</p>`;
+                        }
+                        
+                        contentHTML += `</div>`;
+
+                    } else {
+                        // Default UI for regular text messages
+                        contentHTML = `<div class="bg-amber-600 rounded-lg p-3 max-w-lg"><p class="text-white">${content}</p></div>`;
+                    }
+                    messageWrapper.innerHTML = contentHTML + avatarHTML;
+
+                } else { // AI, error, system notice
+                    const isError = sender === 'error';
+                    const avatarColor = isError ? 'bg-red-500' : 'bg-amber-500';
+                    const contentBg = isError ? 'bg-red-800' : 'bg-neutral-700';
+
+                    avatarHTML = `<div class="${avatarColor} text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold mr-3">AI</div>`;
+                    contentHTML = `<div class="${contentBg} rounded-lg p-3 max-w-lg"><p class="${isError ? 'text-red-200' : 'text-white'}">${content}</p></div>`;
+                    messageWrapper.innerHTML = avatarHTML + contentHTML;
+                }
+                
+                return messageWrapper;
+            }
+            
+            function addMessageToUI(sender, content) {
+                const messageElement = createMessageElement(sender, content);
+                chatContainer.appendChild(messageElement);
+
+                // Add event listener for the toggle button if it exists in the new element
+                const toggleButton = messageElement.querySelector('.toggle-button');
+                if (toggleButton) {
+                    const collapsibleContent = messageElement.querySelector('.collapsible-content');
+                    toggleButton.addEventListener('click', () => {
+                        collapsibleContent.classList.toggle('expanded');
+                        toggleButton.textContent = collapsibleContent.classList.contains('expanded') ? 'Show Less' : 'Show More';
+                    });
+                }
+
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function addToolCallToUI(toolCalls) {
+                const messageWrapper = document.createElement('div');
+                messageWrapper.className = 'chat-message flex items-start';
+                const avatar = `<div class="bg-amber-500 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold mr-3">AI</div>`;
+                const toolCallsHtml = toolCalls.map(call => {
+                    const args = JSON.stringify(JSON.parse(call.function.arguments), null, 2);
+                    return `<div class="bg-amber-900/50 border border-amber-700 rounded-lg p-3 mt-2">
+                            <p class="text-sm font-semibold text-amber-300">Tool Call Request:</p>
+                            <p class="text-sm text-white mt-1"><strong>Function:</strong> ${call.function.name}</p>
+                            <p class="text-sm text-white mt-1"><strong>Arguments:</strong></p>
+                            <pre class="bg-neutral-900/70 p-2 rounded-md mt-1 text-xs overflow-x-auto text-gray-300">${args}</pre>
+                        </div>`;
+                }).join('');
+                const contentWrapper = `<div class="rounded-lg max-w-lg w-full">${toolCallsHtml}</div>`;
+                messageWrapper.innerHTML = avatar + contentWrapper;
+                chatContainer.appendChild(messageWrapper);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            const importFileInput = document.getElementById('import-file-input');
+            const importChatsButton = document.getElementById('import-chats-button');
+
+            importChatsButton.addEventListener('click', () => {
+                importFileInput.click();
+            });
+
+            importFileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (!importedData.chats || !importedData.chatContents) {
+                            throw new Error("Invalid import file format.");
+                        }
+
+                        // Clear existing chat data
+                        const chats = getSavedChats();
+                        chats.forEach(chat => localStorage.removeItem(chat.id));
+                        localStorage.removeItem('fireworks_chats');
+
+                        // Import new data
+                        localStorage.setItem('fireworks_chats', JSON.stringify(importedData.chats));
+                        for (const chatId in importedData.chatContents) {
+                            localStorage.setItem(chatId, JSON.stringify(importedData.chatContents[chatId]));
+                        }
+                        
+                        alert('Chats imported successfully!');
+                        initializeApp(); // Reload the app state
+
+                    } catch (error) {
+                        alert(`Failed to import chats: ${error.message}`);
+                    }
+                };
+                reader.onerror = () => alert(`Failed to read file: ${reader.error}`);
+                reader.readAsText(file);
+                event.target.value = null; // Reset file input
+            });
+
+            // --- Initial Load ---
+            function initializeApp() {
+                const savedKey = loadApiKey();
+                if (savedKey) {
+                    apiKeyInput.value = savedKey;
+                }
+                
+                const chats = getSavedChats();
+                if (chats.length === 0) {
+                    startNewChat();
+                } else {
+                    const lastChatId = chats.sort((a,b) => b.id - a.id)[0].id;
+                    loadChat(lastChatId);
+                }
+                modelSelect.dispatchEvent(new Event('change'));
+            }
+
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
+
