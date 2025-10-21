@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OHPYNE</title>
-	<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OHPYNE</title>
     <link rel="icon" href="https://i.imgur.com/dl50hcz.png" type="image/gif">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; }
         ::-webkit-scrollbar { width: 8px; }
@@ -22,908 +21,1581 @@
         .chat-message p { word-wrap: break-word; }
         input[type=range]::-webkit-slider-runnable-track { background: #404040; }
         input[type=range]::-moz-range-track { background: #404040; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            background: #fb923c;
-            cursor: pointer;
-            height: 1rem;
-            width: 1rem;
-            border-radius: 9999px;
-            margin-top: -4px;
+        input[type=radio]:checked + label {
+			background-color: #f97316; /* amber-600 */
+			color: white;
+			font-weight: 600;
+		}
+		.advanced-settings-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out; padding-top: 0; padding-bottom: 0; }
+        .advanced-settings-content.expanded { max-height: 500px; padding-top: 1rem; padding-bottom: 1rem; }
+        .chat-history-item { cursor: pointer; transition: background-color 0.2s ease-in-out; }
+        .chat-history-item.active { background-color: #f97316; }
+        .chat-message pre { position: relative; background-color: #1e1e1e; border: 1px solid #404040; border-radius: 6px; padding: 1rem; overflow-x: auto; font-size: 0.875rem; line-height: 1.4; }
+        .chat-message pre code { background-color: transparent !important; padding: 0; }
+        .chat-message code { font-family: 'Courier New', Courier, monospace; }
+        .chat-options-menu { position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 10; background-color: #262626; border: 1px solid #404040; border-radius: 0.5rem; padding: 0.5rem; min-width: 140px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        .chat-options-menu button { display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem; font-size: 0.875rem; border-radius: 0.25rem; color: #d4d4d4; }
+        .chat-options-menu button:hover { background-color: #525252; color: #fafafa; }
+        #drop-zone {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.7); border: 2px dashed #fb923c;
+            border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;
+            pointer-events: none; z-index: 99; opacity: 0; transition: opacity 0.2s ease-in-out;
         }
-        input[type=range]::-moz-range-thumb {
-            background: #fb923c;
-            cursor: pointer;
-            height: 1rem;
-            width: 1rem;
-            border-radius: 9999px;
-            border: none;
-        }
-        .advanced-settings-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-        .advanced-settings-content.expanded {
-            max-height: 500px;
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
-        #advanced-settings-toggle svg {
-            transition: transform 0.3s ease-in-out;
-        }
-        #advanced-settings-toggle.expanded svg {
-            transform: rotate(180deg);
-        }
-        .chat-history-item {
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-        }
-        .chat-history-item.active {
-            background-color: #f97316; /* amber-500 */
-        }
-        .collapsible-content {
-            max-height: 250px;
-            overflow-y: auto;
-            transition: max-height 0.3s ease-out;
-            background-color: rgba(0,0,0,0.2);
-            border-radius: 4px;
-            padding: 8px;
-        }
-        .collapsible-content.expanded {
-            max-height: 1000px; /* Arbitrary large value to show all content */
-        }
-        .toggle-button {
-            display: block;
-            width: 100%;
-            text-align: center;
-            padding-top: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            color: #d4d4d4; /* neutral-300 */
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-        .toggle-button:hover {
-            opacity: 1;
-        }
+        #drop-zone.active { opacity: 1; }
+		#prompt-input {
+        resize: none;
+        min-height: 56px; /* 3rem */
+        max-height: 140px; /* 5 lines approx */
+        height: auto;
+        overflow-y: auto;
+		}
+				.mic-button {
+			background: none;
+			border: none;
+			cursor: pointer;
+			padding: 0 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.2s ease;
+		}
+		
+		.mic-button:hover {
+			color: #f97316;
+		}
+		
+		.mic-button.recording {
+			color: #ef4444;
+			animation: pulse 1.5s infinite;
+		}
+		
+		@keyframes pulse {
+			0% { transform: scale(1); }
+			50% { transform: scale(1.1); }
+			100% { transform: scale(1); }
+		}
+		
+		.mic-button.processing {
+			color: #3b82f6;
+		}
+		
+		/* Hide default scrollbar for conversation history */
+		#conversation-history {
+			scrollbar-width: thin;
+			scrollbar-color: #525252 #171717;
+		}
+		/* File preview styling */
+		.file-preview {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			background-color: #f97316; /* amber-500 */
+			color: white;
+			padding: 8px 12px;
+			border-radius: 6px;
+			font-size: 0.875rem;
+		}
+		.file-preview svg {
+			flex-shrink: 0;
+		}
+		.file-content-preview {
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.8rem;
+        background-color: #1e1e1e;
+        border: 1px solid #404040;
+        border-radius: 4px;
+        padding: 8px;
+        margin: 8px 0;
+		}
+		.truncated-indicator {
+        font-style: italic;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        margin-top: 4px;
+		}
     </style>
 </head>
 <body class="bg-neutral-900 text-white antialiased">
     <div class="flex flex-col md:flex-row h-screen">
-        <!-- Left Panel: Configuration -->
         <div class="w-full md:w-1/3 lg:w-1/4 p-6 bg-neutral-800 border-r border-neutral-700 flex flex-col">
-            <!-- Header -->
-<div class="flex items-center justify-between mb-6">
+            <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center space-x-3">
-                    <button id="new-chat-button" class="p-2 rounded-md hover:bg-neutral-700 transition-colors" title="New Chat">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                    </button>
-                    <div class="flex items-center">
-                        <img src="https://i.imgur.com/eZ1HhPy.png" alt="OHPYNE Logo" class="h-8 w-auto">
-                    </div>
+                    <button id="new-chat-button" class="p-2 rounded-md hover:bg-neutral-700 transition-colors" title="New Chat"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
+                    <div class="flex items-center"><img src="https://i.imgur.com/vs46DEy.png" alt="OHPYNE Logo Header" class="h-8 w-auto"></div>
                 </div>
+                <button id="settings-button" class="p-2 rounded-md hover:bg-neutral-700 transition-colors" title="Settings"><span class="text-gray-300 text-2xl">&#x2699;</span></button>
+            </div>
 
-                <button id="settings-button" class="p-2 rounded-md hover:bg-neutral-700 transition-colors" title="Settings">
-                     <svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-1.212l.27-.1a2.25 2.25 0 012.07 0l.27.1c.55.205 1.02.67 1.11 1.212l.12.693c.095.548.562 1.012 1.112 1.218l.27.1a2.25 2.25 0 010 2.07l-.27.1c-.55.205-1.02.67-1.11 1.212l-.12.693c-.09.548-.562 1.012-1.112 1.218l-.27.1a2.25 2.25 0 01-2.07 0l-.27-.1c-.55-.206-1.02-.67-1.11-1.218l-.12-.693c-.09-.542-.56-1.007-1.11-1.212l-.27-.1a2.25 2.25 0 010-2.07l.27-.1c.55-.205 1.02-.67 1.11-1.212l.12-.693z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </button>
-            </div>           
-            <!-- Chat History -->
-            <div class="mb-4 flex-grow flex flex-col min-h-0 md:flex-1">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Mode</label>
+                <div class="flex w-full bg-neutral-700 rounded-lg p-1">
+                    <button id="mode-chat" class="flex-1 text-center text-sm py-1.5 rounded-md bg-amber-600 text-white font-semibold">Chat</button>
+                    <button id="mode-image" class="flex-1 text-center text-sm py-1.5 rounded-md text-gray-300">Image</button>
+                </div>
+            </div>
+
+            <div id="chat-history-container" class="mb-4 flex-grow flex flex-col min-h-0 md:flex-1">
                 <label class="block text-sm font-medium text-gray-300 mb-2">Chats</label>
-                <div id="chat-history-list" class="flex-1 overflow-y-auto bg-neutral-900/50 rounded-lg p-2 space-y-1">
-                    <!-- Chat history items will be populated here -->
-                </div>
+                <div id="chat-history-list" class="flex-1 overflow-y-auto bg-neutral-900/50 rounded-lg p-2 space-y-1"></div>
             </div>
 
-            <!-- Model Selection -->
- <div class="mb-4">
+            <div class="mb-4">
                 <label for="model" class="block text-sm font-medium text-gray-300 mb-2">Model</label>
-                <select id="model" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <optgroup label="Tool Use Models">
-                        <option value="accounts/fireworks/models/firefunction-v2">firefunction-v2</option>
-                        <option value="accounts/fireworks/models/llama-v3p1-405b-instruct">llama-v3p1-405b-instruct</option>
-                        <option value="accounts/fireworks/models/llama-v3p1-70b-instruct">llama-v3p1-70b-instruct</option>
-                        <option value="accounts/fireworks/models/mixtral-8x22b-instruct">mixtral-8x22b-instruct</option>
-                    </optgroup>
-                    <optgroup label="General Models">
-                        <option value="accounts/fireworks/models/llama-v3p1-8b-instruct">llama-v3p1-8b-instruct</option>
-                        <option value="accounts/fireworks/models/llama-v3-70b-instruct">llama-v3-70b-instruct</option>
-                        <option value="accounts/fireworks/models/gpt-oss-120b">gpt-oss-120b</option>
-                        <option value="accounts/fireworks/models/qwen3-coder-480b-a35b-instruct">qwen3-coder-480b-a35b-instruct</option>
-                        <option value="accounts/01-ai/models/kimi-k2-instruct-0905">kimi-k2-instruct-0905</option>
-                        <option value="accounts/zhipu/models/glm-4.5-air">glm-4.5-air</option>
-                    </optgroup>
-                </select>
-                <p id="model-recommendation" class="text-xs text-gray-400 mt-1"></p>
-            </div>
-			
-            <!-- Tools Definition -->
-            <div class="flex-grow flex flex-col md:flex-1">
-                <label for="tools-select" class="block text-sm font-medium text-gray-300 mb-2">Tools</label>
-                <select id="tools-select" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <option value="none">None</option>
-                    <option value="readFile" selected>Read File (Example)</option>
-                    <option value="analyzeData">Analyze Data (Example)</option>
-                    <option value="custom">Add Custom Tool...</option>
-                </select>
-
-                <div id="custom-tool-container" class="hidden mt-4 flex-1 flex flex-col">
-                    <label for="tools-definition-custom" class="block text-sm font-medium text-gray-300 mb-2">Custom Tool (JSON Array)</label>
-                    <textarea id="tools-definition-custom" class="w-full flex-1 bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Paste your tool definition JSON here..."></textarea>
-                    <p id="json-error" class="text-xs text-red-400 mt-1 hidden"></p>
+                <div id="chat-model-selector" class="relative flex items-center">
+                    <select id="model" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none pr-10">
+                         <optgroup label="Vision & Tool Use Models">
+                            <option value="accounts/fireworks/models/firefunction-v2">firefunction-v2</option>
+                            <option value="accounts/fireworks/models/llama-v3p1-405b-instruct">llama-v3p1-405b-instruct</option>
+                        </optgroup>
+                        <optgroup label="General Chat Models">
+                            <option value="accounts/fireworks/models/llama-v3p1-70b-instruct">llama-v3p1-70b-instruct</option>
+                            <option value="accounts/fireworks/models/mixtral-8x22b-instruct">mixtral-8x22b-instruct</option>
+							<option value="accounts/fireworks/models/gpt-oss-120b">gpt-oss-120b</option>
+							<option value="accounts/fireworks/models/qwen3-coder-480b-a35b-instruct">qwen3-coder-480b-a35b-instruct</option>
+							<option value="accounts/fireworks/models/kimi-k2-instruct-0905">kimi-k2-instruct-0905</option>
+							<option value="accounts/fireworks/models/glm-4.5-air">glm-4.5-air</option>
+                        </optgroup>
+						<optgroup label="Local Models (Ollama)">
+							<option value="llama3">llama3 (local)</option>
+							<option value="codellama">codellama (local)</option>
+						</optgroup>
+                    </select>
+					<button id="model-menu-button" class="absolute right-0 p-2 rounded-md hover:bg-neutral-600 transition-colors mr-1" title="Model Options">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+					</button>
+					<div id="model-menu" class="hidden absolute bottom-full right-0 mb-2 w-72 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-20 p-4 space-y-4">
+						<button id="set-default-model-button" class="w-full text-sm bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-3 rounded-md transition-colors">Set as Default</button>
+						<button id="use-last-model-button" class="w-full text-sm bg-neutral-600 hover:bg-neutral-500 text-white font-semibold py-2 px-3 rounded-md transition-colors">Use Last Model</button>
+						<div>
+							<label for="new-model-input" class="block text-sm font-medium text-gray-300 mb-2">Add Custom Model</label>
+							<form id="add-model-form" class="flex space-x-2">
+								<input type="text" id="new-model-input" placeholder="e.g., accounts/fireworks/models/..." class="flex-1 bg-neutral-700 border border-neutral-600 rounded-md px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+								<button type="submit" class="bg-neutral-600 hover:bg-neutral-500 text-white font-semibold py-1.5 px-3 rounded-md text-sm transition-colors">Add</button>
+							</form>
+						</div>
+						<a href="https://app.fireworks.ai/models" target="_blank" rel="noopener noreferrer" class="block w-full text-center text-sm text-amber-400 hover:text-amber-300 transition-colors">Find More Models &#x2197;</a>
+					</div>
+                </div>
+                <div id="image-model-selector" class="relative hidden">
+                    <select id="image-model" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+						    <option value="accounts/fireworks/models/flux-kontext-max">flux-kontext-max (Async)</option>
+							<option value="accounts/fireworks/models/playground-v2-5-1024px-aesthetic">playground-v2.5 (Direct)</option>
+							<option value="accounts/fireworks/models/flux-kontext-pro">flux-kontext-pro (Async)</option>
+							<option value="accounts/fireworks/models/some-other-direct-model">some-model (Direct)</option>
+					</select>
                 </div>
             </div>
         </div>
 
-        <!-- Right Panel: Chat Interface -->
-        <div class="flex-1 flex flex-col p-4 md:p-6 min-h-0 h-screen md:h-auto">
-            <div id="chat-container" class="flex-1 overflow-y-auto mb-4 pr-2 space-y-4">
-                <!-- Chat messages will be populated here -->
-            </div>
-			<div id="loading" class="hidden text-center my-4">
-                <img src="https://i.imgur.com/eZ1HhPy.png" alt="Loading..." class="mx-auto w-16 h-auto">
-            </div>
-            </div>
-            <!-- Input Form -->
+        <div id="right-panel" class="flex-1 flex flex-col p-4 md:p-6 min-h-0 h-screen md:h-auto relative">
+            <div id="drop-zone"><p class="text-amber-400 font-bold text-lg">Drop File Here</p></div>
+            <div id="chat-container" class="flex-1 overflow-y-auto mb-4 pr-2 space-y-4"></div>
+			<div id="loading" class="hidden text-center my-4"><img src="https://i.imgur.com/lwBKPg1.gif" alt="Loading..." class="mx-auto w-48"></div>
+            
             <div class="mt-auto">
+                <div id="image-preview-container" class="relative w-24 h-24 mb-2 hidden">
+                    <img id="image-preview" class="w-full h-full object-cover rounded-md" alt="User upload preview">
+                    <button id="remove-image-button" title="Remove image" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center font-bold leading-none">&times;</button>
+                </div>
                 <form id="chat-form" class="flex items-center bg-neutral-700 border border-neutral-600 rounded-lg">
-                    <input type="text" id="prompt-input" placeholder="Ask anything..." class="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-400 focus:outline-none">
-                     <button type="button" id="add-file-button" title="Add File" class="p-3 text-gray-400 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                           <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 00-4.242 0l-7 7a3 3 0 004.241 4.243h.001l.497-.5a.75.75 0 011.064 1.057l-.498.501-.002.002a4.5 4.5 0 01-6.364-6.364l7-7a4.5 4.5 0 016.368 6.36l-3.455 3.553A2.625 2.625 0 117.44 9.56l3.45-3.554a.75.75 0 111.06 1.062l-3.45 3.554a1.125 1.125 0 001.59 1.591l3.456-3.554a3 3 0 000-4.243z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                     <button type="button" id="send-context-button" title="Send Context" class="p-3 text-gray-400 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h5a1 1 0 000-2H3zM3 11a1 1 0 100 2h11a1 1 0 100-2H3zM3 15a1 1 0 100 2h5a1 1 0 100-2H3z" />
-                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L12 8.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-r-lg transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                </form>
+					<button type="button" id="mic-button" title="Voice input" class="mic-button text-gray-400 hover:text-white transition-colors">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+						</svg>
+					</button>
+					<textarea id="prompt-input" rows="1" placeholder="Ask anything..." class="flex-1 bg-transparent px-2 py-3 text-white placeholder-gray-400 focus:outline-none"></textarea>
+
+					<button type="button" id="add-file-button" title="Add file" class="p-3 text-gray-400 hover:text-white transition-colors">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+							<path fill-rule="evenodd" d="M15.621 4.379a3 3 0 0 0-4.242 0l-7 7a3 3 0 0 0 4.241 4.243h.001l.497-.5a.75.75 0 0 1 1.064 1.057l-.498.501-.002.002a4.5 4.5 0 0 1-6.364-6.364l7-7a4.5 4.5 0 0 1 6.368 6.36l-3.455 3.553A2.625 2.625 0 1 1 7.44 9.56l3.45-3.554a.75.75 0 1 1 1.06 1.062l-3.45 3.554a1.125 1.125 0 0 0 1.59 1.591l3.456-3.554a3 3 0 0 0 0-4.243Z" clip-rule="evenodd" />
+						</svg>
+					</button>
+					<button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-r-lg transition-colors duration-200">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+						</svg>
+					</button>
+				</form>
             </div>
-            <input type="file" id="file-input" class="hidden" accept=".txt,.js,.py,.html,.css,.json,.csv,.md">
+            <input type="file" id="image-file-input" class="hidden" accept="image/png, image/jpeg, image/gif, image/webp, .txt, .py, .csv, .html">
         </div>
     </div>
-    
-    <!-- Settings Modal -->
+
     <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-neutral-800 rounded-lg shadow-xl p-8 w-full max-w-md border border-neutral-700 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-amber-400">Settings</h2>
-                <button id="close-settings-button" class="p-2 rounded-full hover:bg-neutral-700 transition-colors">
-                    <svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <button id="close-settings-button" class="p-2 rounded-full hover:bg-neutral-700 transition-colors"><svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
+            <div class="mb-6"><label for="api-key" class="block text-sm font-medium text-gray-300 mb-2">API Key</label><input type="password" id="api-key" value="fw_XXXXXXXXXXXXX" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"></div>
+            <div class="mb-6"><label for="system-prompt" class="block text-sm font-medium text-gray-300 mb-2">System Prompt</label><textarea id="system-prompt" rows="4" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., You are a helpful assistant who always responds in the style of a pirate."></textarea></div>
             
-             <!-- API Key -->
-            <div class="mb-6">
-                <label for="api-key" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
-                <input type="password" id="api-key" value="fw_XXXXXXXXXXXXX" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500">
-            </div>
+            <div class="mb-2"><button id="export-chats-button" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Export All Chats</button></div>
+            <div class="mb-4"><button id="import-chats-button" class="w-full bg-neutral-600 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Import Chats</button><input type="file" id="import-file-input" class="hidden" accept=".json"></div>
+            <div class="mb-6"><button id="open-ollama-creator-button" class="w-full bg-neutral-600 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Create Custom Ollama Model</button></div>
 
-            <!-- Export Chats -->
-            <div class="mb-2">
-                <button id="export-chats-button" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                    Export All Chats
-                </button>
-            </div>
-            
-            <!-- Import Chats -->
+            <div class="mb-6"><div class="flex justify-between items-center"><label for="temperature" class="block text-sm font-medium text-gray-300">Temperature</label><span id="temperature-value" class="text-sm text-amber-400 font-mono">1.0</span></div><input type="range" id="temperature" min="0" max="2" step="0.1" value="1.0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2"></div>
+            <div class="mb-6"><div class="flex justify-between items-center"><label for="max-tokens" class="block text-sm font-medium text-gray-300">Max Tokens</label><span id="max-tokens-value" class="text-sm text-amber-400 font-mono">4096</span></div><input type="range" id="max-tokens" min="1" max="16384" step="128" value="4096" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2"></div>
             <div class="mb-6">
-                <button id="import-chats-button" class="w-full bg-neutral-600 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                    Import Chats
-                </button>
-                <input type="file" id="import-file-input" class="hidden" accept=".json">
-            </div>
-
-            <!-- Temperature -->
-            <div class="mb-6">
-                 <div class="flex justify-between items-center">
-                    <label for="temperature" class="block text-sm font-medium text-gray-300">Temperature</label>
-                    <span id="temperature-value" class="text-sm text-amber-400 font-mono">1.0</span>
-                </div>
-                <input type="range" id="temperature" min="0" max="2" step="0.1" value="1.0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
-            </div>
-
-            <!-- Max Tokens -->
-             <div class="mb-6">
                 <div class="flex justify-between items-center">
-                    <label for="max-tokens" class="block text-sm font-medium text-gray-300">Max Tokens</label>
-                    <span id="max-tokens-value" class="text-sm text-amber-400 font-mono">1024</span>
+                    <label for="steps-slider" class="block text-sm font-medium text-gray-300">Steps (Playground Model)</label>
+                    <span id="steps-value" class="text-sm text-amber-400 font-mono">30</span>
                 </div>
-                <input type="range" id="max-tokens" min="1" max="16384" step="128" value="4096" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
+                <input type="range" id="steps-slider" min="10" max="150" step="1" value="30" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
             </div>
-
-            <!-- Advanced Settings -->
             <div class="border-t border-neutral-700 pt-4">
-                <button id="advanced-settings-toggle" class="w-full flex justify-between items-center text-left text-lg font-semibold text-amber-400">
-                    <span>Advanced</span>
-                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                </button>
+                <button id="advanced-settings-toggle" class="w-full flex justify-between items-center text-left text-lg font-semibold text-amber-400"><span>Advanced</span><svg class="w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg></button>
                 <div id="advanced-settings-content" class="advanced-settings-content">
-                    <!-- Top P -->
-                    <div class="mb-4">
-                         <div class="flex justify-between items-center">
-                            <label for="top-p" class="block text-sm font-medium text-gray-300">Top P</label>
-                            <span id="top-p-value" class="text-sm text-amber-400 font-mono">1.0</span>
-                        </div>
-                        <input type="range" id="top-p" min="0" max="1" step="0.01" value="1.0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
-                    </div>
-                    <!-- Top K -->
-                    <div class="mb-4">
-                         <div class="flex justify-between items-center">
-                            <label for="top-k" class="block text-sm font-medium text-gray-300">Top K</label>
-                            <span id="top-k-value" class="text-sm text-amber-400 font-mono">40</span>
-                        </div>
-                        <input type="range" id="top-k" min="0" max="100" step="1" value="40" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
-                    </div>
-                    <!-- Presence Penalty -->
-                    <div class="mb-4">
-                         <div class="flex justify-between items-center">
-                            <label for="presence-penalty" class="block text-sm font-medium text-gray-300">Presence Penalty</label>
-                            <span id="presence-penalty-value" class="text-sm text-amber-400 font-mono">0.0</span>
-                        </div>
-                        <input type="range" id="presence-penalty" min="-2" max="2" step="0.1" value="0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
-                    </div>
-                    <!-- Frequency Penalty -->
-                    <div>
-                         <div class="flex justify-between items-center">
-                            <label for="frequency-penalty" class="block text-sm font-medium text-gray-300">Frequency Penalty</label>
-                            <span id="frequency-penalty-value" class="text-sm text-amber-400 font-mono">0.0</span>
-                        </div>
-                        <input type="range" id="frequency-penalty" min="-2" max="2" step="0.1" value="0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2">
-                    </div>
+                    <div class="mb-4"><div class="flex justify-between items-center"><label for="top-p" class="block text-sm font-medium text-gray-300">Top P</label><span id="top-p-value" class="text-sm text-amber-400 font-mono">1.0</span></div><input type="range" id="top-p" min="0" max="1" step="0.01" value="1.0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2"></div>
+                    <div class="mb-4"><div class="flex justify-between items-center"><label for="top-k" class="block text-sm font-medium text-gray-300">Top K</label><span id="top-k-value" class="text-sm text-amber-400 font-mono">40</span></div><input type="range" id="top-k" min="0" max="100" step="1" value="40" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2"></div>
+                    <div class="mb-4"><div class="flex justify-between items-center"><label for="presence-penalty" class="block text-sm font-medium text-gray-300">Presence Penalty</label><span id="presence-penalty-value" class="text-sm text-amber-400 font-mono">0.0</span></div><input type="range" id="presence-penalty" min="-2" max="2" step="0.1" value="0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2"></div>
+                    <div><div class="flex justify-between items-center"><label for="frequency-penalty" class="block text-sm font-medium text-gray-300">Frequency Penalty</label><span id="frequency-penalty-value" class="text-sm text-amber-400 font-mono">0.0</span></div><input type="range" id="frequency-penalty" min="-2" max="2" step="0.1" value="0" class="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer mt-2"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="ollama-creator-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+		<div class="bg-neutral-800 rounded-lg shadow-xl p-8 w-full max-w-lg border border-neutral-700">
+			<div class="flex justify-between items-center mb-6">
+				<h2 class="text-2xl font-bold text-amber-400">Create a New Local Model</h2>
+				<button id="close-ollama-creator-button" class="p-2 rounded-full hover:bg-neutral-700 transition-colors">
+					<svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+				</button>
+			</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Model Metadata ---
-async function getAIResponse() {
-                loadingIndicator.classList.remove('hidden');
-                const currentApiKey = apiKeyInput.value;
-                if (!currentApiKey || currentApiKey === 'fw_XXXXXXXXXXXXX') {
-                    addMessageToUI('error', 'Please enter a valid Fireworks AI API key in the settings.');
-                    loadingIndicator.classList.add('hidden');
-                    return;
-                }
+			<form id="ollama-creator-form">
+				<div class="mb-6">
+					<label class="block text-sm font-medium text-gray-300 mb-2">Model Source</label>
+					<div class="flex w-full bg-neutral-700 rounded-lg p-1">
+						<input type="radio" id="type-base" name="ollamaModelType" value="base" class="hidden" checked>
+						<label for="type-base" class="flex-1 text-center text-sm py-1.5 rounded-md cursor-pointer transition-colors">From Base Model</label>
+						<input type="radio" id="type-gguf" name="ollamaModelType" value="gguf" class="hidden">
+						<label for="type-gguf" class="flex-1 text-center text-sm py-1.5 rounded-md cursor-pointer transition-colors">From GGUF File</label>
+					</div>
+				</div>
 
-                let tools = [];
-                 try {
-                    const selectedTool = toolsSelect.value;
-                    if (selectedTool === 'readFile') tools = readFileTool;
-                    else if (selectedTool === 'analyzeData') tools = analyzeDataTool;
-                    else if (selectedTool === 'custom') {
-                        const toolsText = toolsDefinitionCustomTextarea.value.trim();
-                        if(toolsText) tools = JSON.parse(toolsText);
-                    }
-                } catch (error) {
-                    addMessageToUI('error', 'Failed to parse Tools JSON. Please correct the format.');
-                    loadingIndicator.classList.add('hidden');
-                    return;
-                }
+				<div id="from-base-content" class="space-y-4">
+					<div>
+						<label for="base-model-input" class="block text-sm font-medium text-gray-300 mb-2">Base Model Name</label>
+						<input type="text" id="base-model-input" placeholder="e.g., llama3" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500">
+						<p class="text-xs text-gray-400 mt-1">The name of the model already downloaded in Ollama.</p>
+					</div>
+					<div>
+						<label for="new-model-name-input" class="block text-sm font-medium text-gray-300 mb-2">New Custom Model Name</label>
+						<input type="text" id="new-model-name-input" placeholder="e.g., pirate-llama" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500">
+					</div>
+					<div>
+						<label for="ollama-system-prompt" class="block text-sm font-medium text-gray-300 mb-2">Custom Instructions (System Prompt)</label>
+						<textarea id="ollama-system-prompt" rows="3" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white" placeholder="You are a helpful assistant who speaks like a pirate."></textarea>
+					</div>
+				</div>
 
-                try {
-                    const requestBody = {
-                        model: modelSelect.value,
-                        messages: conversationHistory,
-                        temperature: parseFloat(temperatureSlider.value),
-                        max_tokens: parseInt(maxTokensSlider.value, 10),
-                        top_p: parseFloat(topPSlider.value),
-                        top_k: parseInt(topKSlider.value, 10),
-                        presence_penalty: parseFloat(presencePenaltySlider.value),
-                        frequency_penalty: parseFloat(frequencyPenaltySlider.value),
-                    };
-                    
-                    // --- CORRECTED LOGIC ---
-                    // If tools are defined, add them to the request.
-                    // The old reference to modelData has been removed.
-                    if (tools.length > 0) {
-                        requestBody.tools = tools;
-                        requestBody.tool_choice = "auto";
-                    }
-                    
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'Authorization': `Bearer ${currentApiKey}`
-                        },
-                        body: JSON.stringify(requestBody)
-                    });
+				<div id="from-gguf-content" class="space-y-4 hidden">
+					<div>
+						<label for="gguf-path-input" class="block text-sm font-medium text-gray-300 mb-2">Absolute Path to GGUF File</label>
+						<input type="text" id="gguf-path-input" placeholder="/Users/yourname/models/model.gguf" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500">
+						<p class="text-xs text-gray-400 mt-1">This must be the full path on the machine where Ollama is running.</p>
+					</div>
+					<div>
+						<label for="gguf-model-name-input" class="block text-sm font-medium text-gray-300 mb-2">New Model Name</label>
+						<input type="text" id="gguf-model-name-input" placeholder="e.g., my-custom-llama" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500">
+					</div>
+				</div>
+				
+				<div class="mt-6">
+					 <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors">Create Model</button>
+					 <p id="ollama-creator-status" class="text-center text-sm text-gray-400 mt-4 h-5"></p>
+				</div>
+			</form>
+		</div>
+	</div>
 
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.fault ? errorData.fault.faultstring : `HTTP error! Status: ${response.status}`);
-                    }
 
-                    const data = await response.json();
-                    const aiMessage = data.choices[0].message;
-                    conversationHistory.push(aiMessage);
-                    saveChatContent(activeChatId, conversationHistory);
 
-                    if (aiMessage.tool_calls) {
-                         addToolCallToUI(aiMessage.tool_calls);
-                         const toolExecutionMessage = aiMessage.tool_calls.map(tc => 
-                            `Function: ${tc.function.name}\nArguments: ${tc.function.arguments}`
-                         ).join('\n\n');
-                         addMessageToUI('assistant', `The model has requested the following tool call(s). In a production application, you would now execute this function and return the result to the model.\n\n\`\`\`json\n${toolExecutionMessage}\n\`\`\``);
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM element references ---
+        const settingsButton = document.getElementById('settings-button');
+        const closeSettingsButton = document.getElementById('close-settings-button');
+        const settingsModal = document.getElementById('settings-modal');
+        const apiKeyInput = document.getElementById('api-key');
+        const systemPromptTextarea = document.getElementById('system-prompt');
+        const chatContainer = document.getElementById('chat-container');
+        const chatForm = document.getElementById('chat-form');
+        const promptInput = document.getElementById('prompt-input');
+        const loadingIndicator = document.getElementById('loading');
+        const newChatButton = document.getElementById('new-chat-button');
+        const chatHistoryList = document.getElementById('chat-history-list');
+		let recognition;
+		let isRecording = false;
+		let silenceTimer;
+		const SILENCE_THRESHOLD = 1500;
+        const modeChatButton = document.getElementById('mode-chat');
+        const modeImageButton = document.getElementById('mode-image');
+        const chatHistoryContainer = document.getElementById('chat-history-container');
+        const chatModelSelector = document.getElementById('chat-model-selector');
+        const imageModelSelector = document.getElementById('image-model-selector');
+        const useLastModelButton = document.getElementById('use-last-model-button');
+		const chatModelSelect = document.getElementById('model');
+        const imageModelSelect = document.getElementById('image-model');
+        
+        const rightPanel = document.getElementById('right-panel');
+        const dropZone = document.getElementById('drop-zone');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageButton = document.getElementById('remove-image-button');
+        const addFileButton = document.getElementById('add-file-button');
+        const imageFileInput = document.getElementById('image-file-input');
+        
+        const exportChatsButton = document.getElementById('export-chats-button');
+        const importChatsButton = document.getElementById('import-chats-button');
+        const importFileInput = document.getElementById('import-file-input');
+        const temperatureSlider = document.getElementById('temperature');
+        const temperatureValue = document.getElementById('temperature-value');
+        const maxTokensSlider = document.getElementById('max-tokens');
+        const maxTokensValue = document.getElementById('max-tokens-value');
+        const advancedSettingsToggle = document.getElementById('advanced-settings-toggle');
+        const advancedSettingsContent = document.getElementById('advanced-settings-content');
+        const topPSlider = document.getElementById('top-p');
+        const topPValue = document.getElementById('top-p-value');
+        const topKSlider = document.getElementById('top-k');
+        const topKValue = document.getElementById('top-k-value');
+        const presencePenaltySlider = document.getElementById('presence-penalty');
+        const presencePenaltyValue = document.getElementById('presence-penalty-value');
+        const frequencyPenaltySlider = document.getElementById('frequency-penalty');
+        const frequencyPenaltyValue = document.getElementById('frequency-penalty-value');
+		const stepsSlider = document.getElementById('steps-slider');
+        const stepsValue = document.getElementById('steps-value');
+        const modelMenuButton = document.getElementById('model-menu-button');
+        const modelMenu = document.getElementById('model-menu');
+        const setDefaultModelButton = document.getElementById('set-default-model-button');
+        const addModelForm = document.getElementById('add-model-form');
+        const newModelInput = document.getElementById('new-model-input');
+// --- Replace old Ollama references with these ---
+        const ollamaCreatorModal = document.getElementById('ollama-creator-modal');
+        const openOllamaCreatorButton = document.getElementById('open-ollama-creator-button');
+        const closeOllamaCreatorButton = document.getElementById('close-ollama-creator-button');
+        const ollamaCreatorForm = document.getElementById('ollama-creator-form');
+        const ollamaCreatorStatus = document.getElementById('ollama-creator-status');
+        const ollamaModelTypeRadios = document.querySelectorAll('input[name="ollamaModelType"]');
+        const fromBaseContent = document.getElementById('from-base-content');
+        const fromGGUFContent = document.getElementById('from-gguf-content');
+        
+        // --- Input fields ---
+        const baseModelInput = document.getElementById('base-model-input');
+        const newModelNameInput = document.getElementById('new-model-name-input');
+        const ollamaSystemPrompt = document.getElementById('ollama-system-prompt');
+        const ggufPathInput = document.getElementById('gguf-path-input');
+        const ggufModelNameInput = document.getElementById('gguf-model-name-input');
+        const API_CHAT_URL = 'https://api.fireworks.ai/inference/v1/chat/completions';
+		const API_IMAGE_WORKFLOW_URL = 'https://api.fireworks.ai/inference/v1/workflows';
+		const API_IMAGE_GEN_URL = 'https://api.fireworks.ai/inference/v1/image_generation';
+		
+		const sleep = ms => new Promise(res => setTimeout(res, ms));
+        let conversationHistory = [];
+        let activeChatId = null;
+        let currentMode = 'chat';
+        let attachedImage = null; // Will store { base64, mimeType, name }
+		let attachedFile = null;  // Will store { name, content }
 
-                    } else if (aiMessage.content) {
-                         addMessageToUI('assistant', aiMessage.content);
-                    }
+        const getSavedChats = () => JSON.parse(localStorage.getItem('fireworks_chats')) || [];
+        const saveChats = (chats) => localStorage.setItem('fireworks_chats', JSON.stringify(chats));
+        const getChatContent = (chatId) => JSON.parse(localStorage.getItem(chatId)) || [];
+        const saveChatContent = (chatId, content) => localStorage.setItem(String(chatId), JSON.stringify(content));
+        const saveApiKey = (key) => localStorage.setItem('fireworks_api_key', key);
+        const loadApiKey = () => localStorage.getItem('fireworks_api_key');
+        const saveSystemPrompt = (prompt) => localStorage.setItem('fireworks_system_prompt', prompt);
+        const loadSystemPrompt = () => localStorage.getItem('fireworks_system_prompt');
 
-                } catch (error) {
-                    addMessageToUI('error', `An error occurred: ${error.message}`);
-                    conversationHistory.pop(); // Remove the user's message if the call failed
-                    saveChatContent(activeChatId, conversationHistory);
-                } finally {
-                    loadingIndicator.classList.add('hidden');
-                }
-            }
-            // --- DOM element references ---
-            const settingsButton = document.getElementById('settings-button');
-            const closeSettingsButton = document.getElementById('close-settings-button');
-            const settingsModal = document.getElementById('settings-modal');
-            const modelSelect = document.getElementById('model');
-            const modelRecommendation = document.getElementById('model-recommendation');
-            const apiKeyInput = document.getElementById('api-key');
-            
-            // Tools
-            const toolsSelect = document.getElementById('tools-select');
-            const customToolContainer = document.getElementById('custom-tool-container');
-            const toolsDefinitionCustomTextarea = document.getElementById('tools-definition-custom');
-            const jsonError = document.getElementById('json-error');
-            
-            // Sliders
-            const temperatureSlider = document.getElementById('temperature');
-            const temperatureValue = document.getElementById('temperature-value');
-            const maxTokensSlider = document.getElementById('max-tokens');
-            const maxTokensValue = document.getElementById('max-tokens-value');
-
-            // Advanced Settings
-            const advancedSettingsToggle = document.getElementById('advanced-settings-toggle');
-            const advancedSettingsContent = document.getElementById('advanced-settings-content');
-            const topPSlider = document.getElementById('top-p');
-            const topPValue = document.getElementById('top-p-value');
-            const topKSlider = document.getElementById('top-k');
-            const topKValue = document.getElementById('top-k-value');
-            const presencePenaltySlider = document.getElementById('presence-penalty');
-            const presencePenaltyValue = document.getElementById('presence-penalty-value');
-            const frequencyPenaltySlider = document.getElementById('frequency-penalty');
-            const frequencyPenaltyValue = document.getElementById('frequency-penalty-value');
-            
-            // Chat
-            const chatContainer = document.getElementById('chat-container');
-            const chatForm = document.getElementById('chat-form');
-            const promptInput = document.getElementById('prompt-input');
-            const loadingIndicator = document.getElementById('loading');
-            const addFileButton = document.getElementById('add-file-button');
-            const fileInput = document.getElementById('file-input');
-            const newChatButton = document.getElementById('new-chat-button');
-            const sendContextButton = document.getElementById('send-context-button');
-            const chatHistoryList = document.getElementById('chat-history-list');
-            const exportChatsButton = document.getElementById('export-chats-button');
-
-            const API_URL = 'https://api.fireworks.ai/inference/v1/chat/completions';
-            let conversationHistory = [];
-            let activeChatId = null;
-			let fileContentForSubmission = null;
-            
-            // --- Tool Definitions ---
-            const readFileTool = [{"type":"function","function":{"name":"readFile","description":"Reads the contents of a specified text file.","parameters":{"type":"object","properties":{"filename":{"type":"string","description":"The path to the text file to be read."}},"required":["filename"]}}}];
-            const analyzeDataTool = [{"type":"function","function":{"name":"analyzeData","description":"Analyzes a structured data file (e.g., CSV, JSON) and returns key insights.","parameters":{"type":"object","properties":{"filename":{"type":"string","description":"The path to the data file to be analyzed."},"analysis_type":{"type":"string","enum":["summary","correlation","trends"],"description":"The type of analysis to perform."}},"required":["filename","analysis_type"]}}}];
-            
-            // --- Local Storage Functions ---
-            const getSavedChats = () => JSON.parse(localStorage.getItem('fireworks_chats')) || [];
-            const saveChats = (chats) => localStorage.setItem('fireworks_chats', JSON.stringify(chats));
-            const getChatContent = (chatId) => JSON.parse(localStorage.getItem(chatId)) || [];
-            const saveChatContent = (chatId, content) => localStorage.setItem(chatId, JSON.stringify(content));
-            const saveApiKey = (key) => localStorage.setItem('fireworks_api_key', key);
-            const loadApiKey = () => localStorage.getItem('fireworks_api_key');
-
-			function loadChatList() {
-                const chats = getSavedChats();
-                chatHistoryList.innerHTML = '';
-
-                if (chats.length === 0) {
-                    // Ensure a new chat is created if the list becomes empty
-                    if (!activeChatId) startNewChat(); 
-                    return;
-                }
+        function updateUIMode(mode) {
+            currentMode = mode;
+            if (mode === 'chat') {
+                modeChatButton.classList.add('bg-amber-600', 'text-white', 'font-semibold');
+                modeImageButton.classList.remove('bg-amber-600', 'text-white', 'font-semibold');
+                modeImageButton.classList.add('text-gray-300');
                 
-                chats.sort((a, b) => b.id - a.id).forEach(chat => {
-                    const item = document.createElement('div');
-                    // Use flex to align the name and the delete button
-                    item.className = 'chat-history-item flex justify-between items-center text-sm p-2 rounded-md hover:bg-neutral-700';
-                    if (chat.id === activeChatId) {
-                        item.classList.add('active');
-                    }
+                chatHistoryContainer.style.display = 'flex';
+                chatModelSelector.style.display = 'flex';
+                imageModelSelector.style.display = 'none';
+                addFileButton.style.display = 'block';
+                promptInput.placeholder = "Ask anything, or drop a file...";
 
-                    // Chat name
-                    const chatName = document.createElement('span');
-                    chatName.textContent = chat.name;
-                    chatName.className = 'truncate'; // Prevent long names from breaking layout
-                    item.appendChild(chatName);
+            } else {
+                modeImageButton.classList.add('bg-amber-600', 'text-white', 'font-semibold');
+                modeChatButton.classList.remove('bg-amber-600', 'text-white', 'font-semibold');
+                modeChatButton.classList.add('text-gray-300');
 
-                    // Add delete icon only for the active chat
-                    if (chat.id === activeChatId) {
-                        const deleteButton = document.createElement('button');
-                        deleteButton.className = 'p-1 rounded-full hover:bg-neutral-600';
-                        deleteButton.title = 'Delete chat';
-                        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>`;
-                        
-                        deleteButton.addEventListener('click', (e) => {
-                            // Stop the click from propagating to the parent div's loadChat event
-                            e.stopPropagation(); 
-                            deleteChat(chat.id);
+                chatHistoryContainer.style.display = 'none';
+                chatModelSelector.style.display = 'none';
+                imageModelSelector.style.display = 'block';
+                addFileButton.style.display = 'none';
+                promptInput.placeholder = "Describe the image you want to create...";
+                removeAttachedFile();
+            }
+        }
+
+        function loadChatList() {
+            chatHistoryList.innerHTML = '';
+            const chats = getSavedChats();
+            chats.sort((a, b) => (b.bookmarked || 0) - (a.bookmarked || 0) || b.id - a.id);
+            if (chats.length === 0) { if (!activeChatId) startNewChat(); return; }
+            chats.forEach(chat => {
+                const item = document.createElement('div');
+                item.className = 'chat-history-item relative flex justify-between items-center text-sm p-2 rounded-md hover:bg-neutral-700';
+                if (chat.id === activeChatId) item.classList.add('active');
+                const chatName = document.createElement('span');
+                chatName.textContent = (chat.bookmarked ? '★ ' : '') + chat.name;
+                chatName.className = 'truncate';
+                item.appendChild(chatName);
+                if (chat.id === activeChatId) {
+                    const menuButton = document.createElement('button');
+                    menuButton.className = 'p-1 rounded-full hover:bg-neutral-600';
+                    menuButton.title = 'Chat options';
+                    menuButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>`;
+                    const menu = document.createElement('div');
+                    menu.className = 'chat-options-menu hidden';
+                    const renameBtn = document.createElement('button');
+                    renameBtn.textContent = 'Rename';
+                    renameBtn.onclick = () => renameChat(chat.id);
+                    const bookmarkBtn = document.createElement('button');
+                    bookmarkBtn.textContent = chat.bookmarked ? 'Unbookmark' : 'Bookmark';
+                    bookmarkBtn.onclick = () => toggleBookmark(chat.id);
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = () => deleteChat(chat.id);
+                    menu.append(renameBtn, bookmarkBtn, deleteBtn);
+                    item.append(menuButton, menu);
+                    menuButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('.chat-options-menu').forEach(m => {
+                            if (m !== menu) m.classList.add('hidden');
                         });
-                        item.appendChild(deleteButton);
+                        menu.classList.toggle('hidden');
+                    });
+                }
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    if (chat.id !== activeChatId) loadChat(chat.id); 
+                });
+                chatHistoryList.appendChild(item);
+            });
+        }
+        function renameChat(chatId) {
+            let chats = getSavedChats();
+            const chat = chats.find(c => c.id === chatId);
+            if (!chat) return;
+            const newName = prompt('Enter a new name for the chat:', chat.name);
+            if (newName && newName.trim() !== '') {
+                chat.name = newName.trim();
+                saveChats(chats);
+                loadChatList();
+            }
+        }
+        function toggleBookmark(chatId) {
+            let chats = getSavedChats();
+            const chat = chats.find(c => c.id === chatId);
+            if (!chat) return;
+            chat.bookmarked = !chat.bookmarked;
+            saveChats(chats);
+            loadChatList();
+        }
+        function deleteChat(chatIdToDelete) {
+            if (!confirm('Are you sure you want to delete this chat? This action cannot be undone.')) return;
+            localStorage.removeItem(String(chatIdToDelete));
+            let chats = getSavedChats().filter(chat => chat.id !== chatIdToDelete);
+            saveChats(chats);
+            if (activeChatId === chatIdToDelete) {
+                if (chats.length > 0) {
+                    const nextChatId = chats.sort((a,b) => b.id - a.id)[0].id;
+                    loadChat(nextChatId);
+                } else {
+                    startNewChat();
+                }
+            } else {
+                loadChatList();
+            }
+        }
+		function loadChat(chatId) {
+			activeChatId = chatId;
+			conversationHistory = getChatContent(chatId) || [];
+			chatContainer.innerHTML = '';
+			conversationHistory.forEach(msg => {
+				if (msg.role === 'user') {
+					const isMultiPart = Array.isArray(msg.content);
+					const textContent = isMultiPart ? msg.content.find(c => c.type === 'text')?.text || '' : msg.content;
+					const imageContent = isMultiPart ? msg.content.find(c => c.type === 'image_url')?.image_url.url : null;
+					
+					let displayContent = textContent;
+					const fileContextMatch = textContent.match(/File: "[^"]+"\n---\n([\s\S]*?)\n---\n\n/);
+					if (fileContextMatch) {
+						const fileContent = fileContextMatch[1];
+						if (fileContent.length > 500) {
+							displayContent = textContent.replace(
+								fileContextMatch[1], 
+								fileContent.substring(0, 500) + '...\n[Content truncated for display]'
+							);
+						}
+					}
+					
+					addMessageToUI('user', displayContent, imageContent, msg.fileName);
+				}
+				else if (msg.role === 'assistant' && msg.content) {
+					addMessageToUI('assistant', msg.content);
+				}
+			});
+			loadChatList();
+		}
+
+        function startNewChat() {
+            const chats = getSavedChats();
+            const newChatId = Date.now();
+            const newChatName = `Chat ${new Date(newChatId).toLocaleString()}`;
+            chats.push({ id: newChatId, name: newChatName, bookmarked: false });
+            saveChats(chats);
+            activeChatId = newChatId;
+            const systemPrompt = systemPromptTextarea.value || 'You are a helpful assistant.';
+            conversationHistory = [{ role: 'system', content: systemPrompt }];
+            saveChatContent(activeChatId, conversationHistory);
+            chatContainer.innerHTML = '';
+            addMessageToUI('assistant', 'New chat started. Ask me anything!');
+            loadChatList();
+        }
+		function exportChats() {
+					try {
+						const chats = getSavedChats();
+						if (chats.length === 0) {
+							alert('No chats to export.');
+							return;
+						}
+
+						const exportData = {
+							chats: chats,
+							chatContents: {}
+						};
+
+						chats.forEach(chat => {
+							const content = getChatContent(chat.id);
+							if (content) {
+								exportData.chatContents[chat.id] = content;
+							}
+						});
+
+						// Convert the data to a JSON string and create a blob
+						const jsonString = JSON.stringify(exportData, null, 2); // The '2' makes the JSON file readable
+						const blob = new Blob([jsonString], { type: 'application/json' });
+						const url = URL.createObjectURL(blob);
+
+						// Create a temporary link to trigger the download
+						const a = document.createElement('a');
+						a.href = url;
+						const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+						a.download = `OHPYNE_chats_${timestamp}.json`;
+						document.body.appendChild(a);
+						a.click();
+
+						// Clean up the temporary link and URL
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+
+					} catch (error) {
+						console.error('Failed to export chats:', error);
+						alert('An error occurred while exporting chats. See the console for details.');
+					}
+				}
+		function handleImport(file) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+
+                    if (!importedData.chats || !importedData.chatContents || !Array.isArray(importedData.chats)) {
+                        throw new Error("Invalid import file format. The file must contain 'chats' and 'chatContents'.");
                     }
 
-                    item.dataset.chatId = chat.id;
-                    item.addEventListener('click', () => {
-                        if (chat.id !== activeChatId) { // Prevent redundant loading
-                           loadChat(chat.id);
+                    const existingChats = getSavedChats();
+                    const existingChatIds = new Set(existingChats.map(c => c.id));
+                    let newChatsCount = 0;
+
+                    // Merge imported chats and their content
+                    importedData.chats.forEach(importedChat => {
+                        // Add chat metadata if it doesn't already exist
+                        if (!existingChatIds.has(importedChat.id)) {
+                            existingChats.push(importedChat);
+                            newChatsCount++;
+                        }
+                        // Always save/overwrite the chat content
+                        const chatContent = importedData.chatContents[importedChat.id];
+                        if (chatContent) {
+                            saveChatContent(importedChat.id, chatContent);
                         }
                     });
 
-                    chatHistoryList.appendChild(item);
-                });
-            }
-			
-			function deleteChat(chatIdToDelete) {
-                // Add a confirmation dialog before deleting
-                if (!confirm('Are you sure you want to delete this chat?')) {
-                    return;
-                }
-
-                // Remove the chat content from storage
-                localStorage.removeItem(chatIdToDelete);
-
-                // Get the current list of chats and filter out the deleted one
-                let chats = getSavedChats();
-                const updatedChats = chats.filter(chat => chat.id !== chatIdToDelete);
-                saveChats(updatedChats);
-
-                // Check if any chats remain
-                if (updatedChats.length > 0) {
-                    // Load the most recent remaining chat
-                    const nextChatId = updatedChats.sort((a,b) => b.id - a.id)[0].id;
-                    loadChat(nextChatId);
-                } else {
-                    // If no chats are left, start a new one
-                    startNewChat();
-                }
-            }
-			
-            function loadChat(chatId) {
-                activeChatId = chatId;
-                conversationHistory = getChatContent(chatId);
-                chatContainer.innerHTML = '';
-                conversationHistory.forEach(msg => {
-                     if (msg.role === 'user') addMessageToUI('user', msg.content);
-                     else if (msg.role === 'assistant') {
-                         if (msg.tool_calls) addToolCallToUI(msg.tool_calls);
-                         if (msg.content) addMessageToUI('assistant', msg.content);
-                     }
-                });
-                loadChatList();
-            }
-            
-            function startNewChat() {
-                const chats = getSavedChats();
-                const newChatId = Date.now();
-                const newChatName = `Chat ${new Date(newChatId).toLocaleString()}`;
-                
-                chats.push({ id: newChatId, name: newChatName });
-                saveChats(chats);
-
-                activeChatId = newChatId;
-                conversationHistory = [{ role: 'system', content: 'You are a helpful assistant. When a user asks you to use a tool, you must use the provided tool.' }];
-                saveChatContent(activeChatId, conversationHistory);
-                
-                chatContainer.innerHTML = '';
-                addMessageToUI('assistant', 'New chat started. Ask me anything!');
-                
-				chatHistoryList.innerHTML = ''; 
-                loadChatList();
-            }
-
-            // --- Event Listeners ---
-            settingsButton.addEventListener('click', () => settingsModal.classList.remove('hidden'));
-            closeSettingsButton.addEventListener('click', () => settingsModal.classList.add('hidden'));
-            settingsModal.addEventListener('click', (e) => {
-                if (e.target === settingsModal) settingsModal.classList.add('hidden');
-            });
-            
-            apiKeyInput.addEventListener('change', () => saveApiKey(apiKeyInput.value));
-
-            newChatButton.addEventListener('click', startNewChat);
-            
-            exportChatsButton.addEventListener('click', () => {
-                const chats = getSavedChats();
-                if (chats.length === 0) {
-                    alert("No chats to export.");
-                    return;
-                }
-                
-                const allData = {
-                    chats: chats,
-                    chatContents: {}
-                };
-
-                chats.forEach(chatMeta => {
-                    allData.chatContents[chatMeta.id] = getChatContent(chatMeta.id);
-                });
-
-                const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `fireworks_chats_export_${Date.now()}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-            
-            addFileButton.addEventListener('click', () => fileInput.click());
-            
-			fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                // Tool Auto-Selection Logic
-                const fileName = file.name.toLowerCase();
-                if (fileName.endsWith('.csv') || fileName.endsWith('.json')) {
-                    toolsSelect.value = 'analyzeData';
-                } else {
-                    toolsSelect.value = 'readFile';
-                }
-                toolsSelect.dispatchEvent(new Event('change'));
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    // Store the actual file content in our temporary variable
-                    fileContentForSubmission = e.target.result;
+                    saveChats(existingChats); // Save the updated list of all chats
                     
-                    // Add a user-friendly placeholder to the input instead of the full text
-                    const placeholder = `[File Attached: ${file.name}]\n`;
-                    promptInput.value = placeholder + promptInput.value;
-                    promptInput.focus();
-                };
-                reader.onerror = () => addMessageToUI('error', `Failed to read file: ${reader.error}`);
-                reader.readAsText(file);
-                event.target.value = null;
-            });            sendContextButton.addEventListener('click', () => {
-                const userAndAssistantHistory = conversationHistory.filter(msg => msg.role === 'user' || msg.role === 'assistant');
-                let chatText = userAndAssistantHistory.map(msg => {
-                    const prefix = msg.role.charAt(0).toUpperCase() + msg.role.slice(1);
-                    let content = msg.tool_calls ? `[Requested Tool Call: ${msg.tool_calls[0].function.name}]` : msg.content;
-                    return `${prefix}: ${content}`;
-                }).join('\n');
-                promptInput.value = `CONTEXT of the previous conversation:\n-------------------------------------\n${chatText}\n-------------------------------------\nBased on the context above, please continue the conversation or answer the following: `;
-                promptInput.focus();
-            });
+                    alert(`Import successful! ${newChatsCount} new chat(s) were added.`);
+                    loadChatList(); // Refresh the UI
+
+                    // Optionally load the most recently imported chat
+                    const lastImported = importedData.chats.sort((a,b) => b.id - a.id)[0];
+                    if(lastImported) loadChat(lastImported.id);
+
+                } catch (error) {
+                    console.error('Failed to import chats:', error);
+                    alert(`An error occurred during import: ${error.message}`);
+                } finally {
+                    // Reset file input to allow importing the same file again
+                    importFileInput.value = '';
+                }
+            };
+            reader.onerror = () => {
+                alert('Failed to read the import file.');
+                importFileInput.value = '';
+            };
+            reader.readAsText(file);
+        }
+        async function handleOllamaModelCreation(event) {
+            event.preventDefault();
             
-            advancedSettingsToggle.addEventListener('click', () => {
-                advancedSettingsContent.classList.toggle('expanded');
-                advancedSettingsToggle.classList.toggle('expanded');
+            const selectedType = document.querySelector('input[name="ollamaModelType"]:checked').value;
+            let newModelName, modelfileContent;
+
+            // --- 1. Gather data based on selected radio button ---
+            if (selectedType === 'base') {
+                const baseModel = baseModelInput.value.trim();
+                const systemPrompt = ollamaSystemPrompt.value.trim();
+                newModelName = newModelNameInput.value.trim();
+                
+                if (!baseModel || !newModelName) {
+                    ollamaCreatorStatus.textContent = 'Error: Base Model and New Model Name are required.';
+                    return;
+                }
+
+                modelfileContent = `FROM ${baseModel}\n`;
+                if (systemPrompt) {
+                    const escapedPrompt = systemPrompt.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+                    modelfileContent += `SYSTEM "${escapedPrompt}"\n`;
+                }
+            } else { // type is 'gguf'
+                const ggufPath = ggufPathInput.value.trim();
+                newModelName = ggufModelNameInput.value.trim();
+                
+                if (!ggufPath || !newModelName) {
+                    ollamaCreatorStatus.textContent = 'Error: GGUF Path and New Model Name are required.';
+                    return;
+                }
+                modelfileContent = `FROM "${ggufPath}"`; // Encapsulate path in quotes
+            }
+            
+            ollamaCreatorStatus.textContent = `Creating model '${newModelName}'... this may take some time.`;
+
+            // --- 2. Send the request to Ollama API ---
+            try {
+                const response = await fetch('http://localhost:11434/api/create', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: newModelName,
+                        modelfile: modelfileContent
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Ollama API Error: ${errorText}`);
+                }
+
+                const responseText = await response.text();
+                const lines = responseText.trim().split('\n');
+                const lastLine = JSON.parse(lines[lines.length - 1]);
+                
+                if (lastLine.status === 'success') {
+                    ollamaCreatorStatus.textContent = `Success! Model '${newModelName}' created.`;
+                    const localOptgroup = chatModelSelect.querySelector('optgroup[label="Local Models (Ollama)"]');
+                    if (localOptgroup) {
+                         const option = document.createElement('option');
+                         option.value = newModelName;
+                         option.textContent = `${newModelName} (local)`;
+                         localOptgroup.appendChild(option);
+                    }
+                    setTimeout(() => {
+                        ollamaCreatorModal.classList.add('hidden');
+                        ollamaCreatorStatus.textContent = ''; // Reset status text
+                    }, 2500);
+                } else {
+                    throw new Error(`Creation failed: ${lastLine.error || 'Unknown error'}`);
+                }
+
+            } catch (error) {
+                console.error('Ollama model creation failed:', error);
+                const friendlyError = error.message.includes('Failed to fetch') ? "Could not connect to Ollama. Is it running?" : error.message;
+                ollamaCreatorStatus.textContent = `Error: ${friendlyError}`;
+            }
+        }
+        
+      
+		function handleFileUpload(file) {
+			removeAttachedFile(); // Clear any existing file first
+			if (!file) return;
+
+			const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+			const textExtensions = ['.txt', '.py', '.csv', '.html'];
+			const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+			// Handle image files
+			if (imageTypes.includes(file.type)) {
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					attachedImage = {
+						base64: e.target.result.split(',')[1],
+						mimeType: file.type,
+						name: file.name
+					};
+					imagePreview.src = e.target.result;
+					imagePreviewContainer.classList.remove('hidden');
+					// Add file name display for images too
+					const fileNameDisplay = document.createElement('div');
+					fileNameDisplay.className = 'file-preview absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate';
+					fileNameDisplay.textContent = file.name;
+					imagePreviewContainer.appendChild(fileNameDisplay);
+				};
+				reader.readAsDataURL(file);
+			} 
+			// Handle text files
+			else if (textExtensions.includes(fileExtension)) {
+				 const reader = new FileReader();
+				 reader.onload = (e) => {
+					attachedFile = { name: file.name, content: e.target.result };
+					// Show file icon and name instead of image
+					imagePreviewContainer.classList.remove('hidden');
+					imagePreviewContainer.innerHTML = `
+						<div class="w-full h-full flex items-center justify-center bg-amber-500 rounded-md">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd" />
+							</svg>
+						</div>
+						<button id="remove-image-button" title="Remove file" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center font-bold leading-none">&times;</button>
+						<div class="file-preview absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 truncate">
+							${file.name}
+						</div>
+					`;
+					
+					// Re-attach event listener to new remove button
+					document.getElementById('remove-image-button').addEventListener('click', removeAttachedFile);
+				 };
+				 reader.readAsText(file);
+			} 
+			// Handle unsupported files
+			else {
+				alert('Unsupported file type. Please upload an image, .txt, .py, .csv, or .html file.');
+			}
+		}
+
+		function autoResizeTextarea() {
+			const textarea = promptInput;
+			textarea.style.height = 'auto';
+			const newHeight = Math.min(textarea.scrollHeight, 140); // Max 5 lines
+			textarea.style.height = newHeight + 'px';
+		}		
+		function saveLastUsedModel(modelPath) {
+			localStorage.setItem('fireworks_last_model', modelPath);
+		}
+        function removeAttachedFile() {
+			attachedImage = null;
+			attachedFile = null;
+			imagePreview.src = '';
+			imagePreviewContainer.classList.add('hidden');
+			imagePreviewContainer.innerHTML = `
+				<img id="image-preview" class="w-full h-full object-cover rounded-md" alt="User upload preview">
+				<button id="remove-image-button" title="Remove image" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center font-bold leading-none">&times;</button>
+			`;
+			if (imageFileInput) imageFileInput.value = '';
+			
+			document.getElementById('remove-image-button').addEventListener('click', removeAttachedFile);
+		}
+
+        // Fix the getAIResponse function - improve error handling:
+		async function getAIResponse() {
+            // Get the selected option element to check its group
+            const selectedOption = chatModelSelect.selectedOptions[0];
+            const isOllamaModel = selectedOption.parentElement.label.includes('Ollama');
+            
+            // Define API details based on model type
+            const OLLAMA_URL = 'http://localhost:11434/api/chat';
+            const API_URL = isOllamaModel ? OLLAMA_URL : API_CHAT_URL;
+            const apiKey = apiKeyInput.value.trim();
+
+            if (!isOllamaModel && (!apiKey || apiKey === 'fw_XXXXXXXXXXXXX')) {
+                addMessageToUI('error', 'Please enter a valid Fireworks AI API key in the settings.');
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                const modelPath = chatModelSelect.value;
+                if (!isOllamaModel) {
+                    saveLastUsedModel(modelPath);
+                }
+                
+                // --- The rest of the function is mostly the same ---
+                const visionModels = ['accounts/fireworks/models/firefunction-v2', 'accounts/fireworks/models/llama-v3p1-405b-instruct'];
+                const isVisionModel = visionModels.includes(modelPath);
+
+                let userInput = promptInput.value.trim();
+                const userMessage = { role: 'user' };
+
+                if (attachedImage) {
+                    if (!isVisionModel && !isOllamaModel) { // Ollama LLaVA models could handle this
+                        throw new Error('An image is attached, but the selected model does not support vision.');
+                    }
+                    const contentArr = [{ type: 'text', text: userInput }];
+                    // Ollama expects images as a separate key in the message object
+                    if (isOllamaModel) {
+                        userMessage.images = [attachedImage.base64];
+                        userMessage.content = userInput;
+                    } else {
+                        contentArr.unshift({ type: 'image_url', image_url: { url: `data:${attachedImage.mimeType};base64,${attachedImage.base64}` } });
+                        userMessage.content = contentArr;
+                    }
+                    userMessage.fileName = attachedImage.name;
+                } else {
+                    if (attachedFile) {
+                        userInput = `File: "${attachedFile.name}"\n---\n${attachedFile.content}\n---\n\n` + userInput;
+                        userMessage.fileName = attachedFile.name;
+                    }
+                    if (!userInput) { loadingIndicator.classList.add('hidden'); return; }
+                    userMessage.content = userInput;
+                }
+
+                conversationHistory.push(userMessage);
+                addMessageToUI('user', promptInput.value.trim(), attachedImage ? imagePreview.src : null, attachedFile ? attachedFile.name : attachedImage ? attachedImage.name : null);
+                saveChatContent(activeChatId, conversationHistory);
+
+                const messagesForApi = conversationHistory.map(m => {
+                    const { fileName, ...apiMsg } = m;
+                    return apiMsg;
+                });
+                
+                const requestBody = {
+                    model: modelPath,
+                    messages: messagesForApi,
+                    stream: false, // Ollama supports streaming, but we'll keep it simple
+                    options: { // Ollama uses an 'options' object for parameters
+                        temperature: parseFloat(temperatureSlider.value),
+                        num_predict: parseInt(maxTokensSlider.value, 10),
+                        top_p: parseFloat(topPSlider.value),
+                        top_k: parseInt(topKSlider.value, 10),
+                    }
+                };
+
+                const headers = { 'Content-Type': 'application/json' };
+                if (!isOllamaModel) {
+                    headers['Authorization'] = `Bearer ${apiKey}`;
+                    // Flatten parameters for Fireworks API
+                    requestBody.temperature = requestBody.options.temperature;
+                    requestBody.max_tokens = requestBody.options.num_predict;
+                    delete requestBody.options;
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
+                }
+
+                const data = await response.json();
+                const aiMessage = data.message; // Ollama's response format is slightly different
+                conversationHistory.push(aiMessage);
+                saveChatContent(activeChatId, conversationHistory);
+                addMessageToUI('assistant', aiMessage.content);
+
+            } catch (error) {
+                console.error('Full error:', error);
+                const friendlyError = error.message.includes('Failed to fetch') ? "Could not connect to Ollama. Is the local server running?" : error.message;
+                addMessageToUI('error', `An error occurred: ${friendlyError}`);
+                conversationHistory.pop(); // Remove the user message that failed
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+// Main function that decides which workflow to use
+// Also fix the image response functions similarly:
+		async function getImageResponseAsync(modelPath, userInput, apiKey) {
+			const workflowUrl = `${API_IMAGE_WORKFLOW_URL}/${modelPath}`;
+			
+			try {
+				const submitResponse = await fetch(workflowUrl, {
+					method: 'POST',
+					headers: { 
+						'Content-Type': 'application/json', 
+						'Accept': 'application/json', 
+						'Authorization': `Bearer ${apiKey}` 
+					},
+					body: JSON.stringify({ prompt: userInput })
+				});
+				
+				if (!submitResponse.ok) {
+					const errorText = await submitResponse.text();
+					console.error('Submit Error:', errorText);
+					throw new Error(`Failed to submit job: ${submitResponse.status} - ${errorText}`);
+				}
+				
+				let submitResult;
+				try {
+					submitResult = await submitResponse.json();
+				} catch (parseError) {
+					const responseText = await submitResponse.text();
+					console.error('Invalid JSON in submit response:', responseText);
+					throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+				}
+				
+				const requestId = submitResult.request_id;
+				if (!requestId) throw new Error("API did not return a request ID.");
+
+				const resultEndpoint = `${workflowUrl}/get_result`;
+				for (let i = 0; i < 60; i++) {
+					await sleep(1000);
+					const pollResponse = await fetch(resultEndpoint, {
+						method: 'POST',
+						headers: { 
+							'Content-Type': 'application/json', 
+							'Accept': 'application/json', 
+							'Authorization': `Bearer ${apiKey}` 
+						},
+						body: JSON.stringify({ "id": requestId })
+					});
+					
+					if (!pollResponse.ok) {
+						console.error(`Polling failed with status: ${pollResponse.status}`);
+						continue;
+					}
+					
+					let pollResult;
+					try {
+						pollResult = await pollResponse.json();
+					} catch (parseError) {
+						const responseText = await pollResponse.text();
+						console.error('Invalid JSON in poll response:', responseText);
+						continue; // Continue polling
+					}
+					
+					const status = pollResult.status;
+
+					if (["Ready", "Complete", "Finished"].includes(status)) {
+						const imageData = pollResult.result?.sample;
+						if (imageData && typeof imageData === 'string' && imageData.startsWith("http")) {
+							addMessageToUI('assistant', imageData);
+						} else if (imageData) {
+							addMessageToUI('assistant', `data:image/png;base64,${imageData}`);
+						} else {
+							throw new Error("Generation completed but no image data was found.");
+						}
+						return;
+					}
+					if (["Failed", "Error"].includes(status)) {
+						throw new Error(`Generation failed: ${pollResult.details || 'Unknown error'}`);
+					}
+				}
+				throw new Error("Image generation timed out after 60 seconds.");
+			} catch (error) {
+				console.error('Full async error:', error);
+				throw error;
+			}
+		}
+
+// New helper for the 1-step DIRECT workflow (Playground models)
+        async function getImageResponseDirect(modelPath, userInput, apiKey) {
+			const endpointUrl = `${API_IMAGE_GEN_URL}/${modelPath}`;
+            const response = await fetch(endpointUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'image/png', // We ask for the image directly
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    prompt: userInput,
+                    output_image_format: "PNG", // Request PNG format
+                    steps: parseInt(stepsSlider.value, 10) // <-- THIS LINE IS NEW
+                })
             });
 
-            toolsSelect.addEventListener('change', () => {
-                customToolContainer.classList.toggle('hidden', toolsSelect.value !== 'custom');
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! Status: ${response.status}`);
+            }
+			const imageBlob = await response.blob();
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(imageBlob);
+            reader.onloadend = () => {
+                const base64data = reader.result;
+                addMessageToUI('assistant', base64data);
+            };
+        }
+		async function getImageResponse() {
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey || apiKey === 'fw_XXXXXXXXXXXXX') {
+                addMessageToUI('error', 'Please enter a valid Fireworks AI API key in the settings.');
+                return;
+            }
+            const userInput = promptInput.value.trim();
+            if (!userInput) return;
+
+            loadingIndicator.classList.remove('hidden');
+            addMessageToUI('user', userInput); 
+
+            // Get the full selected option element to access both its value and text
+            const selectedOption = imageModelSelect.selectedOptions[0];
+            const modelPath = selectedOption.value;
+            const optionText = selectedOption.text;
+
+            try {
+                // Check the option's visible text to decide which workflow to use
+                if (optionText.includes('(Async)')) {
+                    await getImageResponseAsync(modelPath, userInput, apiKey);
+                } else {
+                    await getImageResponseDirect(modelPath, userInput, apiKey);
+                }
+            } catch (error) {
+                console.error('Image generation error:', error);
+                addMessageToUI('error', `Image generation failed: ${error.message}`);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+				// Update the createMessageElement function to handle file content better:
+		function createMessageElement(sender, content, imageSrc = null, fileName = null) {
+			const messageWrapper = document.createElement('div');
+			messageWrapper.className = 'chat-message flex items-start';
+			let avatarHTML;
+
+			if (sender === 'user') {
+				messageWrapper.classList.add('justify-end');
+				avatarHTML = `<div class="bg-neutral-600 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold ml-3 order-2">U</div>`;
+				const contentDiv = document.createElement('div');
+				contentDiv.className = 'bg-amber-600 rounded-lg p-3 max-w-lg';
+				
+				if (imageSrc) {
+					const img = document.createElement('img');
+					img.src = imageSrc;
+					img.className = 'w-full h-auto rounded-md mb-2';
+					contentDiv.appendChild(img);
+				}
+				if (fileName && !imageSrc) { // Show file info only if it's not an image preview
+					const fileDiv = document.createElement('div');
+					fileDiv.className = 'mb-2 p-2 bg-amber-700 rounded-md text-sm flex items-center gap-2';
+					fileDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clip-rule="evenodd" /></svg> <span>${fileName}</span>`;
+					contentDiv.appendChild(fileDiv);
+				}
+				if (content) {
+					// Check if this is file content that needs truncation
+					const fileContextMatch = content.match(/File: "[^"]+"\n---\n([\s\S]*?)\n---\n\n(.*)/);
+					if (fileContextMatch) {
+						const fileContent = fileContextMatch[1];
+						const userText = fileContextMatch[2];
+						
+						// Add user text first if it exists
+						if (userText.trim()) {
+							const userTextP = document.createElement('p');
+							userTextP.className = 'text-white mb-2';
+							userTextP.textContent = userText;
+							contentDiv.appendChild(userTextP);
+						}
+						
+						// Add file content section
+						const fileContentDiv = document.createElement('div');
+						fileContentDiv.className = 'file-content-preview';
+						fileContentDiv.textContent = fileContent;
+						contentDiv.appendChild(fileContentDiv);
+						
+						// Add truncated indicator if needed
+						if (content.includes('[Content truncated for display]')) {
+							const indicator = document.createElement('div');
+							indicator.className = 'truncated-indicator';
+							indicator.textContent = 'Content truncated for display. Full content sent to AI.';
+							contentDiv.appendChild(indicator);
+						}
+					} else {
+						const p = document.createElement('p');
+						p.className = 'text-white';
+						p.textContent = content;
+						contentDiv.appendChild(p);
+					}
+				}
+				messageWrapper.innerHTML = avatarHTML;
+				messageWrapper.appendChild(contentDiv);
+
+			} else if (sender === 'assistant' && content.startsWith('data:image')) {
+				avatarHTML = `<div class="bg-amber-500 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold mr-3">AI</div>`;
+				const contentDiv = document.createElement('div');
+				contentDiv.className = 'bg-neutral-700 rounded-lg p-2 max-w-lg';
+				contentDiv.innerHTML = `<img src="${content}" class="max-w-full h-auto rounded-lg">`;
+				messageWrapper.innerHTML = avatarHTML;
+				messageWrapper.appendChild(contentDiv);
+			} else { // Assistant text or error
+				const isError = sender === 'error';
+				const avatarColor = isError ? 'bg-red-500' : 'bg-amber-500';
+				avatarHTML = `<div class="${avatarColor} text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold mr-3">AI</div>`;
+				const parsedContent = marked.parse(content || '', { gfm: true, breaks: true });
+				const contentBg = isError ? 'bg-red-800' : 'bg-neutral-700';
+				const textColor = isError ? 'text-red-200' : 'text-white';
+				messageWrapper.innerHTML = avatarHTML + `<div class="${contentBg} rounded-lg p-3 max-w-lg content-wrapper ${textColor}">${parsedContent}</div>`;
+			}
+			return messageWrapper;
+		}
+		function initSpeechRecognition() {
+			const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+			if (!SpeechRecognition) {
+				console.warn('Speech recognition not supported in this browser');
+				return false;
+			}
+			
+			recognition = new SpeechRecognition();
+			recognition.continuous = true;
+			recognition.interimResults = true;
+			recognition.lang = 'en-US';
+			
+			recognition.onstart = () => {
+				console.log('Speech recognition started');
+				isRecording = true;
+				updateMicButtonState('recording');
+			};
+			
+			recognition.onresult = (event) => {
+				let finalTranscript = '';
+				let interimTranscript = '';
+				
+				for (let i = event.resultIndex; i < event.results.length; i++) {
+					const transcript = event.results[i][0].transcript;
+					if (event.results[i].isFinal) {
+						finalTranscript += transcript + ' ';
+						// Reset silence timer on final result
+						if (silenceTimer) clearTimeout(silenceTimer);
+						silenceTimer = setTimeout(stopRecording, SILENCE_THRESHOLD);
+					} else {
+						interimTranscript += transcript;
+					}
+				}
+				
+				// Update input with interim results
+				if (finalTranscript || interimTranscript) {
+					promptInput.value = (finalTranscript + interimTranscript).trim();
+					autoResizeTextarea();
+				}
+			};
+			
+			recognition.onerror = (event) => {
+				console.error('Speech recognition error:', event.error);
+				addMessageToUI('error', `Speech recognition error: ${event.error}`);
+				stopRecording();
+			};
+			
+			recognition.onend = () => {
+				console.log('Speech recognition ended');
+				if (isRecording) {
+					// Restart if we're still supposed to be recording
+					try {
+						recognition.start();
+					} catch (e) {
+						stopRecording();
+					}
+				}
+			};
+			
+			return true;
+		}
+
+		// Toggle recording state
+		function toggleRecording() {
+			if (!recognition) {
+				const supported = initSpeechRecognition();
+				if (!supported) {
+					addMessageToUI('error', 'Speech recognition is not supported in your browser. Please try Chrome or Edge.');
+					return;
+				}
+			}
+			
+			if (isRecording) {
+				stopRecording();
+			} else {
+				startRecording();
+			}
+		}
+
+		// Start recording
+		function startRecording() {
+			if (isRecording) return;
+			
+			try {
+				recognition.start();
+				updateMicButtonState('recording');
+				isRecording = true;
+				
+				// Set initial silence timer
+				if (silenceTimer) clearTimeout(silenceTimer);
+				silenceTimer = setTimeout(stopRecording, SILENCE_THRESHOLD);
+			} catch (error) {
+				console.error('Error starting recording:', error);
+				addMessageToUI('error', `Error starting voice recording: ${error.message}`);
+				updateMicButtonState('idle');
+			}
+		}
+
+		// Stop recording
+		function stopRecording() {
+			if (!isRecording) return;
+			
+			try {
+				recognition.stop();
+			} catch (error) {
+				console.error('Error stopping recording:', error);
+			}
+			
+			isRecording = false;
+			updateMicButtonState('processing');
+			
+			// Clear silence timer
+			if (silenceTimer) {
+				clearTimeout(silenceTimer);
+				silenceTimer = null;
+			}
+			
+			// Submit the transcribed text if we have any
+			const transcript = promptInput.value.trim();
+			if (transcript) {
+				// Small delay to show processing state
+				setTimeout(() => {
+					submitVoiceInput(transcript);
+				}, 500);
+			} else {
+				updateMicButtonState('idle');
+			}
+		}
+
+		// Submit voice input
+		async function submitVoiceInput(text) {
+			if (!text) {
+				updateMicButtonState('idle');
+				return;
+			}
+			
+			try {
+				// Set the input value and trigger form submission
+				promptInput.value = text;
+				autoResizeTextarea();
+				
+				// Create and dispatch a submit event
+				const event = new Event('submit', { cancelable: true });
+				chatForm.dispatchEvent(event);
+			} catch (error) {
+				console.error('Error submitting voice input:', error);
+				addMessageToUI('error', `Error submitting voice input: ${error.message}`);
+				updateMicButtonState('idle');
+			}
+		}
+
+		// Update mic button visual state
+		function updateMicButtonState(state) {
+			const micButton = document.getElementById('mic-button');
+			if (!micButton) return;
+			
+			micButton.classList.remove('recording', 'processing');
+			
+			switch (state) {
+				case 'recording':
+					micButton.classList.add('recording');
+					micButton.title = 'Stop recording';
+					break;
+				case 'processing':
+					micButton.classList.add('processing');
+					micButton.title = 'Processing...';
+					break;
+				default: // idle
+					micButton.title = 'Voice input';
+					break;
+			}
+		}
+
+		// Add Text-to-Speech for AI responses
+		function speakText(text) {
+			if ('speechSynthesis' in window) {
+				// Cancel any ongoing speech
+				window.speechSynthesis.cancel();
+				
+				const utterance = new SpeechSynthesisUtterance(text);
+				utterance.voice = null; // Use default voice
+				utterance.rate = 1.0;
+				utterance.pitch = 1.0;
+				utterance.volume = 1.0;
+				
+				utterance.onend = () => {
+					console.log('Speech synthesis finished');
+				};
+				
+				utterance.onerror = (event) => {
+					console.error('Speech synthesis error:', event);
+				};
+				
+				window.speechSynthesis.speak(utterance);
+			} else {
+				console.warn('Speech synthesis not supported');
+			}
+		}
+
+		function addMessageToUI(sender, content, imageSrc = null, fileName = null) {
+		const messageElement = createMessageElement(sender, content, imageSrc, fileName);
+		chatContainer.appendChild(messageElement);
+		messageElement.querySelectorAll('pre code').forEach(hljs.highlightElement);
+		messageElement.querySelectorAll('pre').forEach(pre => {
+			pre.classList.add('group');
+			const buttonContainer = document.createElement('div');
+			buttonContainer.className = 'absolute top-2 right-2 flex gap-x-1 opacity-0 group-hover:opacity-100 transition-opacity';
+			const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
+			const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+			const copyButton = document.createElement('button');
+			copyButton.className = 'p-1.5 bg-neutral-700 hover:bg-neutral-600 rounded-md border border-neutral-600 text-gray-300';
+			copyButton.title = 'Copy code';
+			copyButton.innerHTML = copyIcon;
+			copyButton.addEventListener('click', () => {
+				const codeToCopy = pre.querySelector('code').innerText;
+				navigator.clipboard.writeText(codeToCopy).then(() => {
+					copyButton.innerHTML = checkIcon;
+					setTimeout(() => { copyButton.innerHTML = copyIcon; }, 2000);
+				});
+			});
+			buttonContainer.append(copyButton);
+			pre.appendChild(buttonContainer);
+		});
+		chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+		
+		// Reset textarea height after sending message
+		promptInput.style.height = 'auto';
+		
+		// Speak AI responses
+		if (sender === 'assistant' && content && !content.startsWith('data:image')) {
+			// Only speak text responses, not images or errors
+			speakText(content);
+		}
+		
+		// Reset mic button when assistant responds
+		if (sender === 'assistant') {
+			updateMicButtonState('idle');
+		}
+	}
+		
+
+        // --- Event Listeners ---
+        const addModelOption = (modelPath) => {
+            if (!modelPath) return;
+            const existingOptions = Array.from(chatModelSelect.options).map(opt => opt.value);
+            if (existingOptions.includes(modelPath)) {
+                if (document.activeElement.id === 'new-model-input') alert('This model is already in the list.');
+                return;
+            }
+            const modelName = modelPath.split('/').pop();
+            const option = document.createElement('option');
+            option.value = modelPath;
+            option.textContent = modelName;
+            const generalOptgroup = chatModelSelect.querySelector('optgroup[label="General Chat Models"]');
+            if (generalOptgroup) generalOptgroup.appendChild(option);
+        };
+
+        modelMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modelMenu.classList.toggle('hidden');
+        });
+		useLastModelButton.addEventListener('click', () => {
+			const lastModel = localStorage.getItem('fireworks_last_model');
+			if (lastModel) {
+				chatModelSelect.value = lastModel;
+				saveLastUsedModel(lastModel);
+				useLastModelButton.textContent = 'Applied!';
+				setTimeout(() => {
+					useLastModelButton.textContent = 'Use Last Model';
+					modelMenu.classList.add('hidden');
+				}, 1000);
+			} else {
+				useLastModelButton.textContent = 'No last model found';
+				setTimeout(() => {
+					useLastModelButton.textContent = 'Use Last Model';
+				}, 1500);
+			}
+		});
+
+        setDefaultModelButton.addEventListener('click', () => {
+            localStorage.setItem('fireworks_default_model', chatModelSelect.value);
+            setDefaultModelButton.textContent = 'Saved!';
+            setTimeout(() => {
+                setDefaultModelButton.textContent = 'Set as Default';
+                modelMenu.classList.add('hidden');
+            }, 1000);
+        });
+
+        addModelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newModelPath = newModelInput.value.trim();
+            if (newModelPath) {
+                addModelOption(newModelPath);
+                let customModels = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
+                if (!customModels.includes(newModelPath)) {
+                    customModels.push(newModelPath);
+                    localStorage.setItem('fireworks_custom_models', JSON.stringify(customModels));
+                }
+                newModelInput.value = '';
+            }
+        });
+        settingsButton.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+        closeSettingsButton.addEventListener('click', () => settingsModal.classList.add('hidden'));
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) settingsModal.classList.add('hidden');
+        });
+
+        modeChatButton.addEventListener('click', () => updateUIMode('chat'));
+        modeImageButton.addEventListener('click', () => updateUIMode('image'));
+        openOllamaCreatorButton.addEventListener('click', () => ollamaCreatorModal.classList.remove('hidden'));
+        closeOllamaCreatorButton.addEventListener('click', () => ollamaCreatorModal.classList.add('hidden'));
+        ollamaCreatorForm.addEventListener('submit', handleOllamaModelCreation);
+
+        ollamaModelTypeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'base') {
+                    fromBaseContent.classList.remove('hidden');
+                    fromGGUFContent.classList.add('hidden');
+                } else {
+                    fromBaseContent.classList.add('hidden');
+                    fromGGUFContent.classList.remove('hidden');
+                }
             });
+        });
+        apiKeyInput.addEventListener('input', () => saveApiKey(apiKeyInput.value));
+        systemPromptTextarea.addEventListener('input', () => saveSystemPrompt(systemPromptTextarea.value));
+        newChatButton.addEventListener('click', () => {
+            if (currentMode === 'chat') {
+                startNewChat();
+            } else {
+                chatContainer.innerHTML = '';
+                removeAttachedFile();
+            }
+        });
+        document.addEventListener('click', (e) => {
+            const openChatMenu = document.querySelector('.chat-options-menu:not(.hidden)');
+            if (openChatMenu && !e.target.closest('.chat-history-item')) {
+                openChatMenu.classList.add('hidden');
+            }
+            if(modelMenu && !modelMenu.classList.contains('hidden') && !e.target.closest('#chat-model-selector')) {
+                modelMenu.classList.add('hidden');
+            }
+        });
+        document.getElementById('mic-button').addEventListener('click', toggleRecording);
 
-
-            const setupSlider = (slider, display) => slider.addEventListener('input', () => {
+		window.addEventListener('beforeunload', () => {
+			if (isRecording) stopRecording();
+			if (recognition) recognition.abort();
+		});
+		exportChatsButton.addEventListener('click', exportChats);
+		chatForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			try {
+                if (currentMode === 'chat') { 
+                    saveLastUsedModel(chatModelSelect.value);
+                    await getAIResponse(); 
+                } 
+                else { 
+                    saveLastUsedModel(imageModelSelect.value);
+                    await getImageResponse();
+                }
+            } catch(error) {
+                addMessageToUI('error', `An error occurred during submission: ${error.message}`);
+            }
+			
+			promptInput.value = '';
+            autoResizeTextarea();
+			removeAttachedFile();
+			
+		});
+		importChatsButton.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', (e) => handleImport(e.target.files[0]));
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });		
+		promptInput.addEventListener('input', autoResizeTextarea);
+        rightPanel.addEventListener('dragover', (e) => { e.preventDefault(); if (currentMode === 'chat') dropZone.classList.add('active'); });
+		rightPanel.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+		rightPanel.addEventListener('drop', (e) => {
+			e.preventDefault();
+			dropZone.classList.remove('active');
+			if (currentMode !== 'chat') return;
+			handleFileUpload(e.dataTransfer.files[0]);
+		});
+		addFileButton.addEventListener('click', () => imageFileInput.click());
+		imageFileInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+		removeImageButton.addEventListener('click', removeAttachedFile);
+		
+        const setupSlider = (slider, display) => {
+            if(slider && display) slider.addEventListener('input', () => {
                 const value = parseFloat(slider.value);
                 display.textContent = Number.isInteger(value) ? value : value.toFixed(1);
             });
-            setupSlider(temperatureSlider, temperatureValue);
-            setupSlider(maxTokensSlider, maxTokensValue);
-            setupSlider(topPSlider, topPValue);
-            setupSlider(topKSlider, topKValue);
-            setupSlider(presencePenaltySlider, presencePenaltyValue);
-            setupSlider(frequencyPenaltySlider, frequencyPenaltyValue);
+        };
+        
+		setupSlider(temperatureSlider, temperatureValue);
+        setupSlider(maxTokensSlider, maxTokensValue);
+        setupSlider(topPSlider, topPValue);
+        setupSlider(topKSlider, topKValue);
+        setupSlider(presencePenaltySlider, presencePenaltyValue);
+        setupSlider(frequencyPenaltySlider, frequencyPenaltyValue);
+		setupSlider(stepsSlider, stepsValue);
 
-            toolsDefinitionCustomTextarea.addEventListener('input', () => {
-                const toolsText = toolsDefinitionCustomTextarea.value.trim();
-                if (!toolsText) { jsonError.classList.add('hidden'); return; }
-                try {
-                    JSON.parse(toolsText);
-                    jsonError.classList.add('hidden');
-                } catch (error) {
-                    jsonError.textContent = 'Invalid JSON format.';
-                    jsonError.classList.remove('hidden');
-                }
-            });
-
-			chatForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const userInput = promptInput.value.trim();
-                if (!userInput) return;
-
-                let messageForUI = userInput;
-                let messageForAI = userInput;
-
-                if (fileContentForSubmission) {
-                    // Find the placeholder text, e.g., "[File Attached: data.csv]"
-                    const filePlaceholderMatch = userInput.match(/^\[File Attached: (.*?)\]\n?/);
-                    
-                    if (filePlaceholderMatch) {
-                        const fileName = filePlaceholderMatch[1];
-                        // Construct the full message for the AI model
-                        const contextHeader = `\n--- CONTENT FROM ${fileName} ---\n`;
-                        const fileFooter = "\n--- END OF FILE ---\n\n";
-                        const textWithoutPlaceholder = userInput.replace(filePlaceholderMatch[0], '');
-
-                        messageForAI = contextHeader + fileContentForSubmission + fileFooter + textWithoutPlaceholder;
-                    }
-                }
-
-                // Show the clean version in the UI
-                addMessageToUI('user', messageForUI);
-                // Send the full version (with file content) to the AI
-                conversationHistory.push({ role: 'user', content: messageForAI });
-                
-                saveChatContent(activeChatId, conversationHistory);
-                promptInput.value = '';
-                fileContentForSubmission = null; // <-- Reset the file content after sending
-                await getAIResponse();
-            });			
-
-
-            // --- Core API Logic ---
-            async function getAIResponse() {
-                loadingIndicator.classList.remove('hidden');
-                const currentApiKey = apiKeyInput.value;
-                if (!currentApiKey || currentApiKey === 'fw_XXXXXXXXXXXXX') {
-                    addMessageToUI('error', 'Please enter a valid Fireworks AI API key in the settings.');
-                    loadingIndicator.classList.add('hidden');
-                    return;
-                }
-
-                let tools = [];
-                 try {
-                    const selectedTool = toolsSelect.value;
-                    if (selectedTool === 'readFile') tools = readFileTool;
-                    else if (selectedTool === 'analyzeData') tools = analyzeDataTool;
-                    else if (selectedTool === 'custom') {
-                        const toolsText = toolsDefinitionCustomTextarea.value.trim();
-                        if(toolsText) tools = JSON.parse(toolsText);
-                        else {
-                             addMessageToUI('error', 'Custom tool selected, but no JSON was provided.');
-                             loadingIndicator.classList.add('hidden');
-                             return;
-                        }
-                    }
-                } catch (error) {
-                    addMessageToUI('error', 'Failed to parse Tools JSON. Please correct the format.');
-                    loadingIndicator.classList.add('hidden');
-                    return;
-                }
-
-                try {
-                    const requestBody = {
-                        model: modelSelect.value,
-                        messages: conversationHistory,
-                        temperature: parseFloat(temperatureSlider.value),
-                        max_tokens: parseInt(maxTokensSlider.value, 10),
-                        top_p: parseFloat(topPSlider.value),
-                        top_k: parseInt(topKSlider.value, 10),
-                        presence_penalty: parseFloat(presencePenaltySlider.value),
-                        frequency_penalty: parseFloat(frequencyPenaltySlider.value),
-                    };
-                    
-
-                    
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'Authorization': `Bearer ${currentApiKey}`
-                        },
-                        body: JSON.stringify(requestBody)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.fault ? errorData.fault.faultstring : `HTTP error! Status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    const aiMessage = data.choices[0].message;
-                    conversationHistory.push(aiMessage);
-                    saveChatContent(activeChatId, conversationHistory);
-
-                    if (aiMessage.tool_calls) {
-                         addToolCallToUI(aiMessage.tool_calls);
-                         addMessageToUI('assistant', `The model wants to call ${aiMessage.tool_calls.length} tool(s). In a real app, you would execute the tool and send the results back to the model.`);
-                    } else if (aiMessage.content) {
-                         addMessageToUI('assistant', aiMessage.content);
-                    }
-
-                } catch (error) {
-                    addMessageToUI('error', `An error occurred: ${error.message}`);
-                    conversationHistory.pop(); // Remove the user's message if the call failed
-                    saveChatContent(activeChatId, conversationHistory);
-                } finally {
-                    loadingIndicator.classList.add('hidden');
-                }
-            }
-            
-            // --- UI Rendering ---
-            function createMessageElement(sender, content) {
-                const messageWrapper = document.createElement('div');
-                messageWrapper.className = 'chat-message flex items-start';
-                let avatarHTML, contentHTML;
-                
-                if (sender === 'user') {
-                    messageWrapper.classList.add('justify-end');
-                    avatarHTML = `<div class="bg-neutral-600 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold ml-3 order-2">U</div>`;
-                    
-                    const fileMatch = content.match(/^\[File Attached: (.*?)\]\n?(.*)$/s);
-
-                    if (fileMatch) {
-                        const fileName = fileMatch[1];
-                        const accompanyingText = fileMatch[2];
-                        
-                        // Create a special UI for file attachments
-                        contentHTML = `
-                            <div class="bg-amber-600 rounded-lg p-3 max-w-lg">
-                                <div class="flex items-center gap-3 bg-amber-700/50 p-2 rounded-md">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-200 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="text-white font-medium truncate">${fileName}</span>
-                                </div>`;
-
-                        if (accompanyingText) {
-                           contentHTML += `<p class="text-white pt-3">${accompanyingText}</p>`;
-                        }
-                        
-                        contentHTML += `</div>`;
-
-                    } else {
-                        // Default UI for regular text messages
-                        contentHTML = `<div class="bg-amber-600 rounded-lg p-3 max-w-lg"><p class="text-white">${content}</p></div>`;
-                    }
-                    messageWrapper.innerHTML = contentHTML + avatarHTML;
-
-                } else { // AI, error, system notice
-                    const isError = sender === 'error';
-                    const avatarColor = isError ? 'bg-red-500' : 'bg-amber-500';
-                    const contentBg = isError ? 'bg-red-800' : 'bg-neutral-700';
-
-                    avatarHTML = `<div class="${avatarColor} text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold mr-3">AI</div>`;
-                    contentHTML = `<div class="${contentBg} rounded-lg p-3 max-w-lg"><p class="${isError ? 'text-red-200' : 'text-white'}">${content}</p></div>`;
-                    messageWrapper.innerHTML = avatarHTML + contentHTML;
-                }
-                
-                return messageWrapper;
-            }
-            
-            function addMessageToUI(sender, content) {
-                const messageElement = createMessageElement(sender, content);
-                chatContainer.appendChild(messageElement);
-
-                // Add event listener for the toggle button if it exists in the new element
-                const toggleButton = messageElement.querySelector('.toggle-button');
-                if (toggleButton) {
-                    const collapsibleContent = messageElement.querySelector('.collapsible-content');
-                    toggleButton.addEventListener('click', () => {
-                        collapsibleContent.classList.toggle('expanded');
-                        toggleButton.textContent = collapsibleContent.classList.contains('expanded') ? 'Show Less' : 'Show More';
-                    });
-                }
-
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-            
-            function addToolCallToUI(toolCalls) {
-                const messageWrapper = document.createElement('div');
-                messageWrapper.className = 'chat-message flex items-start';
-                const avatar = `<div class="bg-amber-500 text-white rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center font-bold mr-3">AI</div>`;
-                const toolCallsHtml = toolCalls.map(call => {
-                    const args = JSON.stringify(JSON.parse(call.function.arguments), null, 2);
-                    return `<div class="bg-amber-900/50 border border-amber-700 rounded-lg p-3 mt-2">
-                            <p class="text-sm font-semibold text-amber-300">Tool Call Request:</p>
-                            <p class="text-sm text-white mt-1"><strong>Function:</strong> ${call.function.name}</p>
-                            <p class="text-sm text-white mt-1"><strong>Arguments:</strong></p>
-                            <pre class="bg-neutral-900/70 p-2 rounded-md mt-1 text-xs overflow-x-auto text-gray-300">${args}</pre>
-                        </div>`;
-                }).join('');
-                const contentWrapper = `<div class="rounded-lg max-w-lg w-full">${toolCallsHtml}</div>`;
-                messageWrapper.innerHTML = avatar + contentWrapper;
-                chatContainer.appendChild(messageWrapper);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-
-            const importFileInput = document.getElementById('import-file-input');
-            const importChatsButton = document.getElementById('import-chats-button');
-
-            importChatsButton.addEventListener('click', () => {
-                importFileInput.click();
-            });
-
-            importFileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const importedData = JSON.parse(e.target.result);
-                        if (!importedData.chats || !importedData.chatContents) {
-                            throw new Error("Invalid import file format.");
-                        }
-
-                        // Clear existing chat data
-                        const chats = getSavedChats();
-                        chats.forEach(chat => localStorage.removeItem(chat.id));
-                        localStorage.removeItem('fireworks_chats');
-
-                        // Import new data
-                        localStorage.setItem('fireworks_chats', JSON.stringify(importedData.chats));
-                        for (const chatId in importedData.chatContents) {
-                            localStorage.setItem(chatId, JSON.stringify(importedData.chatContents[chatId]));
-                        }
-                        
-                        alert('Chats imported successfully!');
-                        initializeApp(); // Reload the app state
-
-                    } catch (error) {
-                        alert(`Failed to import chats: ${error.message}`);
-                    }
-                };
-                reader.onerror = () => alert(`Failed to read file: ${reader.error}`);
-                reader.readAsText(file);
-                event.target.value = null; // Reset file input
-            });
-
-            // --- Initial Load ---
-            function initializeApp() {
-                const savedKey = loadApiKey();
-                if (savedKey) {
-                    apiKeyInput.value = savedKey;
-                }
-                
-                const chats = getSavedChats();
-                if (chats.length === 0) {
-                    startNewChat();
-                } else {
-                    const lastChatId = chats.sort((a,b) => b.id - a.id)[0].id;
-                    loadChat(lastChatId);
-                }
-                modelSelect.dispatchEvent(new Event('change'));
-            }
-
-            initializeApp();
+		if(advancedSettingsToggle) advancedSettingsToggle.addEventListener('click', () => {
+            advancedSettingsContent.classList.toggle('expanded');
+            advancedSettingsToggle.querySelector('svg').classList.toggle('rotate-180');
         });
-    </script>
+
+       function initializeApp() {
+			const savedKey = loadApiKey();
+			if (savedKey) apiKeyInput.value = savedKey;
+			const savedPrompt = loadSystemPrompt();
+			systemPromptTextarea.value = savedPrompt || 'You are a helpful assistant.';
+			const customModels = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
+			customModels.forEach(addModelOption);
+			
+			const defaultModel = localStorage.getItem('fireworks_default_model');
+			const lastModel = localStorage.getItem('fireworks_last_model');
+			
+			if (defaultModel) {
+				chatModelSelect.value = defaultModel;
+			} else if (lastModel) {
+				chatModelSelect.value = lastModel;
+			}
+			
+			const chats = getSavedChats();
+			if (chats.length === 0) {
+				startNewChat();
+			} else {
+				const lastChatId = chats.sort((a,b) => b.id - a.id)[0].id;
+				loadChat(lastChatId);
+			}
+			updateUIMode('chat');
+		}
+        initializeApp();
+    });
+	
+</script>
 </body>
 </html>
-
