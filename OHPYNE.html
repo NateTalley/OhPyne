@@ -148,8 +148,13 @@
                     </label>
                 </div>
                 <div class="space-y-2">
-                    <label for="voice-select" class="block text-xs uppercase tracking-wide text-gray-400">Voice</label>
-                    <select id="voice-select" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+                    <button id="tts-config-button" class="w-full bg-neutral-700 hover:bg-neutral-600 text-sm text-gray-200 font-medium rounded-lg py-2 transition-colors flex items-center justify-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894a1.125 1.125 0 001.125.941h.45c.621 0 1.152.45 1.21 1.066l.108 1.178c.06.65.582 1.16 1.234 1.21l.867.073c.631.053 1.11.582 1.11 1.216v1.088c0 .634-.479 1.163-1.11 1.216l-.867.073a1.125 1.125 0 00-1.234 1.21l.108 1.178c.058.617-.589 1.066-1.21 1.066h-.45a1.125 1.125 0 00-1.125.941l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.02-.398-1.11-.94l-.148-.894a1.125 1.125 0 00-1.126-.941h-.45c-.621 0-1.152-.45-1.21-1.066l-.109-1.178a1.125 1.125 0 00-1.233-1.21l-.868-.073c-.631-.053-1.11-.582-1.11-1.216v-1.088c0-.634.479-1.163 1.11-1.216l.868-.073c.65-.05 1.172-.56 1.233-1.21l.109-1.178c.058-.617.589-1.066 1.21-1.066h.45c.566 0 1.064-.394 1.126-.941l.148-.894z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Configure</span>
+                    </button>
                     <button id="stop-tts-button" class="w-full bg-neutral-700 hover:bg-neutral-600 text-sm text-gray-200 font-medium rounded-lg py-2 transition-colors">Stop Playback</button>
                     <p class="text-xs text-amber-400 bg-neutral-900/60 border border-dashed border-amber-500/40 rounded-lg p-2 leading-relaxed">
                         Reminder: make the model dropdown load ONLY serverless models automatically.
@@ -166,22 +171,13 @@
                 <label for="model" class="block text-sm font-medium text-gray-300 mb-2">Model</label>
                 <div id="chat-model-selector" class="relative flex items-center">
                     <select id="model" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none pr-10">
-                         <optgroup label="Vision & Tool Use Models">
-                            <option value="accounts/fireworks/models/firefunction-v2">firefunction-v2</option>
-                            <option value="accounts/fireworks/models/llama-v3p1-405b-instruct">llama-v3p1-405b-instruct</option>
+                        <option value="" disabled selected>Loading serverless models…</option>
+                        <optgroup label="Serverless Chat Models" data-group="serverless-chat"></optgroup>
+                        <optgroup label="Local Models (Ollama)" data-group="local">
+                            <option value="llama3">llama3 (local)</option>
+                            <option value="codellama">codellama (local)</option>
                         </optgroup>
-                        <optgroup label="General Chat Models">
-                            <option value="accounts/fireworks/models/llama-v3p1-70b-instruct">llama-v3p1-70b-instruct</option>
-                            <option value="accounts/fireworks/models/mixtral-8x22b-instruct">mixtral-8x22b-instruct</option>
-							<option value="accounts/fireworks/models/gpt-oss-120b">gpt-oss-120b</option>
-							<option value="accounts/fireworks/models/qwen3-coder-480b-a35b-instruct">qwen3-coder-480b-a35b-instruct</option>
-							<option value="accounts/fireworks/models/kimi-k2-instruct-0905">kimi-k2-instruct-0905</option>
-							<option value="accounts/fireworks/models/glm-4.5-air">glm-4.5-air</option>
-                        </optgroup>
-						<optgroup label="Local Models (Ollama)">
-							<option value="llama3">llama3 (local)</option>
-							<option value="codellama">codellama (local)</option>
-						</optgroup>
+                        <optgroup label="Custom Models" data-group="custom"></optgroup>
                     </select>
 					<button id="model-menu-button" class="absolute right-0 p-2 rounded-md hover:bg-neutral-600 transition-colors mr-1" title="Model Options">
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
@@ -201,11 +197,9 @@
                 </div>
                 <div id="image-model-selector" class="relative hidden">
                     <select id="image-model" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-						    <option value="accounts/fireworks/models/flux-kontext-max">flux-kontext-max (Async)</option>
-							<option value="accounts/fireworks/models/playground-v2-5-1024px-aesthetic">playground-v2.5 (Direct)</option>
-							<option value="accounts/fireworks/models/flux-kontext-pro">flux-kontext-pro (Async)</option>
-							<option value="accounts/fireworks/models/some-other-direct-model">some-model (Direct)</option>
-					</select>
+                        <option value="" disabled selected>Loading serverless models…</option>
+                        <optgroup label="Serverless Vision Models" data-group="serverless-vision"></optgroup>
+                    </select>
                 </div>
             </div>
         </div>
@@ -244,6 +238,30 @@
         </div>
     </div>
 
+    <div id="tts-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4">
+        <div id="tts-modal-overlay" class="absolute inset-0 bg-black/70"></div>
+        <div class="relative bg-neutral-800 border border-neutral-700 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Voice Playback Settings</h2>
+                    <p class="text-sm text-gray-400">Choose a natural sounding English or German voice.</p>
+                </div>
+                <button id="tts-modal-close" class="p-2 rounded-full hover:bg-neutral-700 text-gray-300" aria-label="Close voice playback settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <label for="voice-select" class="block text-xs uppercase tracking-wide text-gray-400">Voice</label>
+                <select id="voice-select" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="tts-modal-cancel" class="px-4 py-2 text-sm text-gray-300 rounded-lg hover:bg-neutral-700 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-neutral-800 rounded-lg shadow-xl p-8 w-full max-w-md border border-neutral-700 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -279,10 +297,10 @@
     </div>
 
     <div id="ollama-creator-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
-		<div class="bg-neutral-800 rounded-lg shadow-xl p-8 w-full max-w-lg border border-neutral-700">
-			<div class="flex justify-between items-center mb-6">
-				<h2 class="text-2xl font-bold text-amber-400">Create a New Local Model</h2>
-				<button id="close-ollama-creator-button" class="p-2 rounded-full hover:bg-neutral-700 transition-colors">
+                <div class="bg-neutral-800 rounded-lg shadow-xl p-8 w-full max-w-lg border border-neutral-700">
+                        <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold text-amber-400">Create a New Local Model</h2>
+                                <button id="close-ollama-creator-button" class="p-2 rounded-full hover:bg-neutral-700 transition-colors">
 					<svg class="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
 				</button>
 			</div>
@@ -331,13 +349,30 @@
 					 <p id="ollama-creator-status" class="text-center text-sm text-gray-400 mt-4 h-5"></p>
 				</div>
 			</form>
-		</div>
-	</div>
+                </div>
+        </div>
+
+
+    <div id="model-availability-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 transform z-50">
+        <div class="bg-neutral-800/95 border border-amber-500/60 rounded-2xl shadow-2xl w-[min(90vw,26rem)] px-5 py-4 space-y-3">
+            <div class="flex items-start justify-between gap-3">
+                <p id="model-toast-message" class="text-sm text-gray-100 leading-relaxed"></p>
+                <button id="model-toast-close" class="text-gray-400 hover:text-gray-200 transition-colors font-semibold text-lg" title="Dismiss notification">&times;</button>
+            </div>
+            <div class="space-y-2">
+                <label for="model-toast-select" class="text-xs uppercase tracking-wide text-gray-400">Choose available model</label>
+                <select id="model-toast-select" class="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"></select>
+            </div>
+            <div class="flex justify-end">
+                <button id="model-toast-apply" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors">Switch Model</button>
+            </div>
+        </div>
+    </div>
 
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         // --- DOM element references ---
         const settingsButton = document.getElementById('settings-button');
         const closeSettingsButton = document.getElementById('close-settings-button');
@@ -366,6 +401,11 @@
         const ttsToggleLabel = document.getElementById('tts-toggle-label');
         const voiceSelect = document.getElementById('voice-select');
         const stopTtsButton = document.getElementById('stop-tts-button');
+        const ttsConfigButton = document.getElementById('tts-config-button');
+        const ttsModal = document.getElementById('tts-modal');
+        const ttsModalOverlay = document.getElementById('tts-modal-overlay');
+        const ttsModalClose = document.getElementById('tts-modal-close');
+        const ttsModalCancel = document.getElementById('tts-modal-cancel');
         
         const rightPanel = document.getElementById('right-panel');
         const dropZone = document.getElementById('drop-zone');
@@ -392,7 +432,12 @@
         const presencePenaltyValue = document.getElementById('presence-penalty-value');
         const frequencyPenaltySlider = document.getElementById('frequency-penalty');
         const frequencyPenaltyValue = document.getElementById('frequency-penalty-value');
-		const stepsSlider = document.getElementById('steps-slider');
+        const modelAvailabilityToast = document.getElementById('model-availability-toast');
+        const modelToastMessage = document.getElementById('model-toast-message');
+        const modelToastSelect = document.getElementById('model-toast-select');
+        const modelToastApply = document.getElementById('model-toast-apply');
+        const modelToastClose = document.getElementById('model-toast-close');
+                const stepsSlider = document.getElementById('steps-slider');
         const stepsValue = document.getElementById('steps-value');
         const modelMenuButton = document.getElementById('model-menu-button');
         const modelMenu = document.getElementById('model-menu');
@@ -442,6 +487,659 @@
         const loadApiKey = () => localStorage.getItem('fireworks_api_key');
         const saveSystemPrompt = (prompt) => localStorage.setItem('fireworks_system_prompt', prompt);
         const loadSystemPrompt = () => localStorage.getItem('fireworks_system_prompt');
+        const SERVERLESS_MODELS_URL = 'https://app.fireworks.ai/models?filter=Serverless';
+        const SERVERLESS_MODELS_CACHE_KEY = 'ohpyne_serverless_models_cache_v1';
+        const SERVERLESS_MODELS_CACHE_TIME_KEY = 'ohpyne_serverless_models_cache_time_v1';
+        const SERVERLESS_REFRESH_INTERVAL = 5 * 60 * 1000;
+        let serverlessModelsState = { chat: [], vision: [] };
+        let serverlessModelPaths = new Set();
+        let serverlessRefreshTimerId = null;
+
+        const serverlessLabelCollator = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+        function getOptgroupByKey(select, key) {
+            if (!select || !key) return null;
+            return select.querySelector(`optgroup[data-group="${key}"]`);
+        }
+
+        function removePlaceholderOption(select) {
+            if (!select) return;
+            const placeholder = Array.from(select.options).find(option => option.value === '' && option.disabled);
+            if (placeholder) placeholder.remove();
+        }
+
+        function isSelectValueAvailable(select, value) {
+            if (!select || value == null) return false;
+            return Array.from(select.options).some(option => option.value === value);
+        }
+
+        function describeModelValue(value) {
+            if (!value) return '';
+            const match = serverlessModelsState.chat.find(item => item.id === value) || serverlessModelsState.vision.find(item => item.id === value);
+            if (match) return match.label;
+            const parts = String(value).split('/');
+            return parts[parts.length - 1] || String(value);
+        }
+
+        function populateSelectGroup(select, groupKey, options) {
+            const group = getOptgroupByKey(select, groupKey);
+            if (!group) return;
+            group.innerHTML = '';
+            (options || []).forEach(optionData => {
+                const option = document.createElement('option');
+                option.value = optionData.id;
+                option.textContent = optionData.label;
+                group.appendChild(option);
+            });
+        }
+
+        function hideModelToast() {
+            if (!modelAvailabilityToast) return;
+            modelAvailabilityToast.classList.add('hidden');
+            delete modelAvailabilityToast.dataset.context;
+        }
+
+        function showModelToast(context, missingLabel, availableOptions) {
+            if (!modelAvailabilityToast || !modelToastMessage || !modelToastSelect) return;
+            if (!Array.isArray(availableOptions) || !availableOptions.length) return;
+
+            const readableLabel = missingLabel || 'the selected model';
+            const contextLabel = context === 'vision' ? 'vision' : 'chat';
+            modelToastMessage.textContent = `The previously selected ${contextLabel} model “${readableLabel}” is no longer available. Please choose another serverless model.`;
+
+            modelToastSelect.innerHTML = '';
+            availableOptions.forEach(optionData => {
+                const option = document.createElement('option');
+                option.value = optionData.id;
+                option.textContent = optionData.label;
+                modelToastSelect.appendChild(option);
+            });
+
+            const currentSelection = context === 'vision' ? imageModelSelect?.value : chatModelSelect?.value;
+            if (currentSelection && availableOptions.some(option => option.id === currentSelection)) {
+                modelToastSelect.value = currentSelection;
+            } else {
+                modelToastSelect.selectedIndex = 0;
+            }
+
+            modelAvailabilityToast.dataset.context = context;
+            modelAvailabilityToast.classList.remove('hidden');
+            setTimeout(() => modelToastSelect.focus(), 0);
+        }
+
+        function loadServerlessModelsFromCache() {
+            try {
+                const cached = localStorage.getItem(SERVERLESS_MODELS_CACHE_KEY);
+                if (!cached) return null;
+                const parsed = JSON.parse(cached);
+                if (!parsed || typeof parsed !== 'object') return null;
+                return {
+                    chat: Array.isArray(parsed.chat) ? parsed.chat : [],
+                    vision: Array.isArray(parsed.vision) ? parsed.vision : []
+                };
+            } catch (error) {
+                console.error('Failed to parse cached serverless models:', error);
+                return null;
+            }
+        }
+
+        function flattenDescriptors(...sources) {
+            const result = [];
+            const stack = [...sources];
+            const visited = new WeakSet();
+            while (stack.length) {
+                const value = stack.pop();
+                if (value == null) continue;
+                if (typeof value === 'object') {
+                    if (visited.has(value)) continue;
+                    visited.add(value);
+                    if (Array.isArray(value)) {
+                        stack.push(...value);
+                    } else {
+                        stack.push(...Object.values(value));
+                    }
+                    continue;
+                }
+                const text = String(value).trim();
+                if (text) result.push(text.toLowerCase());
+            }
+            return result;
+        }
+
+        function tryParseJsonLike(source) {
+            if (!source) return null;
+            try {
+                return JSON.parse(source);
+            } catch (jsonError) {
+                try {
+                    return Function('\"use strict\";return (' + source + ')')();
+                } catch (evalError) {
+                    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+                        console.error('Failed to evaluate serverless model payload:', {
+                            jsonError,
+                            evalError,
+                            sourcePreview: source.slice(0, 200)
+                        });
+                    }
+                    throw new Error('Failed to parse serverless model payload');
+                }
+            }
+        }
+
+        function extractRemixContextValue(source) {
+            if (!source) return null;
+            const startBrace = source.indexOf('{');
+            if (startBrace === -1) return null;
+
+            let index = startBrace;
+            const length = source.length;
+            let depth = 0;
+            let inString = false;
+            let stringQuote = '';
+            let escaped = false;
+            let result = '';
+
+            for (; index < length; index++) {
+                const char = source[index];
+                result += char;
+
+                if (inString) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === stringQuote) {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (char === '\"' || char === '\'' || char === '`') {
+                    inString = true;
+                    stringQuote = char;
+                    continue;
+                }
+
+                if (char === '{' || char === '[') {
+                    depth += 1;
+                    continue;
+                }
+
+                if (char === '}' || char === ']') {
+                    depth -= 1;
+                    if (depth === 0) {
+                        break;
+                    }
+                }
+            }
+
+            return depth === 0 ? result.trim() : null;
+        }
+
+        function isServerlessDeployment(rawModel) {
+            if (!rawModel || typeof rawModel !== 'object') return false;
+
+            const booleanFlags = [
+                rawModel.serverless,
+                rawModel.isServerless,
+                rawModel.is_serverless,
+                rawModel.latestVersion?.isServerless,
+                rawModel.latest_version?.is_serverless
+            ];
+            if (booleanFlags.some(flag => flag === true)) {
+                return true;
+            }
+
+            const descriptors = flattenDescriptors(
+                rawModel.deploymentType,
+                rawModel.deployment_type,
+                rawModel.deploymentTypes,
+                rawModel.deployment_types,
+                rawModel.availableDeployments,
+                rawModel.availableDeploymentTypes,
+                rawModel.available_deployments,
+                rawModel.available_deployment_types,
+                rawModel.deploymentOptions,
+                rawModel.deployment_options,
+                rawModel.deployments,
+                rawModel.model?.deploymentType,
+                rawModel.model?.deploymentTypes,
+                rawModel.model?.deployment_type,
+                rawModel.model?.deployment_types,
+                rawModel.modelCard?.deploymentType,
+                rawModel.modelCard?.deploymentTypes,
+                rawModel.model_card?.deployment_type,
+                rawModel.model_card?.deployment_types,
+                rawModel.latestVersion?.deploymentType,
+                rawModel.latestVersion?.deploymentTypes,
+                rawModel.latestVersion?.deployment_type,
+                rawModel.latestVersion?.deployment_types,
+                rawModel.latestVersion?.model?.deploymentType,
+                rawModel.latestVersion?.model?.deploymentTypes,
+                rawModel.latest_version?.deployment_type,
+                rawModel.latest_version?.deployment_types,
+                rawModel.latest_version?.available_deployments,
+                rawModel.latest_version?.deployment_options,
+                rawModel.latest_version?.model?.deployment_type,
+                rawModel.latest_version?.model?.deployment_types,
+                rawModel.latest_version?.deployment?.type,
+                rawModel.latest_version?.deployment?.deployment_type,
+                rawModel.deployment?.type,
+                rawModel.deployment?.deployment_type,
+                rawModel.deployment?.deploymentType,
+                rawModel.deployment?.kind,
+                rawModel.tags,
+                rawModel.capabilities,
+                rawModel
+            );
+
+            return descriptors.some(descriptor => descriptor.includes('serverless'));
+        }
+
+        function buildServerlessEntry(rawModel) {
+            if (!rawModel || typeof rawModel !== 'object') return null;
+
+            const pathCandidates = [
+                rawModel.modelPath,
+                rawModel.path,
+                rawModel.id,
+                rawModel.model_id,
+                rawModel.slug,
+                rawModel.name,
+                rawModel.handle,
+                rawModel.model?.path,
+                rawModel.model?.modelPath,
+                rawModel.latestVersion?.modelPath,
+                rawModel.latestVersion?.model?.path,
+                rawModel.latest_version?.model_path,
+                rawModel.version?.modelPath,
+                rawModel.version?.model?.path,
+                rawModel.latest_model?.path,
+                rawModel.latest_model?.model_path
+            ];
+
+            let modelPath = pathCandidates.find(candidate => typeof candidate === 'string' && candidate.trim());
+            if (!modelPath && typeof rawModel.handle === 'string') {
+                modelPath = `accounts/fireworks/models/${rawModel.handle.trim()}`;
+            }
+            if (!modelPath) return null;
+            modelPath = modelPath.trim();
+
+            const labelCandidates = [
+                rawModel.displayName,
+                rawModel.display_name,
+                rawModel.name,
+                rawModel.title,
+                rawModel.modelName,
+                rawModel.model_name,
+                rawModel.model?.displayName,
+                rawModel.model?.name,
+                rawModel.latestVersion?.displayName,
+                rawModel.latestVersion?.model?.displayName,
+                rawModel.latest_version?.display_name
+            ];
+
+            const label = (labelCandidates.find(candidate => typeof candidate === 'string' && candidate.trim()) || modelPath.split('/').pop() || modelPath).trim();
+
+            const descriptors = flattenDescriptors(
+                rawModel.modalities,
+                rawModel.capabilities,
+                rawModel.tags,
+                rawModel.categories,
+                rawModel.category,
+                rawModel.verticals,
+                rawModel.modelTags,
+                rawModel.modelCard?.capabilities,
+                rawModel.modelCard?.tags,
+                rawModel.model_card?.capabilities,
+                rawModel.model_card?.tags,
+                rawModel.latestVersion?.modalities,
+                rawModel.latestVersion?.capabilities,
+                rawModel.latestVersion?.tags,
+                rawModel.latest_version?.modalities,
+                rawModel.latest_version?.capabilities,
+                rawModel.latest_version?.tags,
+                rawModel.capability,
+                rawModel.type
+            );
+
+            const pathLower = modelPath.toLowerCase();
+            const labelLower = label.toLowerCase();
+            const descriptorSources = descriptors.concat(pathLower, labelLower);
+
+            const hasKeyword = (keywords) => descriptorSources.some(source => keywords.some(keyword => source.includes(keyword)));
+
+            const visionKeywords = ['vision', 'image', 'diffusion', 'render', 'video', 'picture', 'flux', 'playground', 'photo', 'multimodal', 'gif', 'animation'];
+            const chatKeywords = ['chat', 'text', 'tool', 'function', 'code', 'assistant', 'language', 'reasoning', 'instruct', 'agent'];
+
+            const supportsVision = hasKeyword(visionKeywords);
+            const supportsChat = hasKeyword(chatKeywords) || !supportsVision;
+
+            return {
+                id: modelPath,
+                label,
+                supportsVision,
+                supportsChat
+            };
+        }
+
+        function categorizeServerlessModels(rawModels) {
+            const uniqueEntries = new Map();
+            (rawModels || []).forEach(rawModel => {
+                if (!isServerlessDeployment(rawModel)) return;
+                const entry = buildServerlessEntry(rawModel);
+                if (!entry) return;
+                if (uniqueEntries.has(entry.id)) {
+                    const existing = uniqueEntries.get(entry.id);
+                    existing.supportsVision = existing.supportsVision || entry.supportsVision;
+                    existing.supportsChat = existing.supportsChat || entry.supportsChat;
+                    if (!existing.label && entry.label) existing.label = entry.label;
+                } else {
+                    uniqueEntries.set(entry.id, entry);
+                }
+            });
+
+            const chat = [];
+            const vision = [];
+            uniqueEntries.forEach(entry => {
+                if (entry.supportsChat) chat.push({ id: entry.id, label: entry.label });
+                if (entry.supportsVision) vision.push({ id: entry.id, label: entry.label });
+            });
+
+            chat.sort((a, b) => serverlessLabelCollator.compare(a.label, b.label));
+            vision.sort((a, b) => serverlessLabelCollator.compare(a.label, b.label));
+
+            return { chat, vision };
+        }
+
+        function parseServerlessModelsFromHtml(html) {
+            if (!html) throw new Error('Empty response when loading serverless models');
+
+            const marker = 'window.__remixContext =';
+            let contextPayload = null;
+
+            const extractFromScript = (scriptContent) => {
+                if (!scriptContent || !scriptContent.includes(marker)) return null;
+                const afterMarker = scriptContent.slice(scriptContent.indexOf(marker) + marker.length);
+                return extractRemixContextValue(afterMarker);
+            };
+
+            if (typeof DOMParser !== 'undefined') {
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    contextPayload = Array.from(doc.scripts)
+                        .map(script => extractFromScript(script.textContent || ''))
+                        .find(Boolean) || null;
+                } catch (domError) {
+                    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+                        console.warn('Failed to parse serverless model markup with DOMParser:', domError);
+                    }
+                }
+            }
+
+            if (!contextPayload) {
+                const markerIndex = html.indexOf(marker);
+                if (markerIndex === -1) {
+                    throw new Error('Unable to locate serverless model data (no Remix context found)');
+                }
+                const afterMarker = html.slice(markerIndex + marker.length);
+                contextPayload = extractRemixContextValue(afterMarker);
+            }
+
+            if (!contextPayload) {
+                throw new Error('Unable to locate serverless model data (unterminated script tag)');
+            }
+
+            const parsed = tryParseJsonLike(contextPayload);
+            const loaderDataCandidates = [];
+
+            if (parsed?.state?.loaderData && typeof parsed.state.loaderData === 'object') {
+                loaderDataCandidates.push(parsed.state.loaderData);
+            }
+            if (parsed?.loaderData && typeof parsed.loaderData === 'object') {
+                loaderDataCandidates.push(parsed.loaderData);
+            }
+            if (parsed?.data && typeof parsed.data === 'object') {
+                loaderDataCandidates.push(parsed.data);
+            }
+            if (Array.isArray(parsed?.state?.matches)) {
+                parsed.state.matches.forEach(match => {
+                    if (match?.data && typeof match.data === 'object') {
+                        loaderDataCandidates.push(match.data);
+                    }
+                });
+            }
+
+            if (!loaderDataCandidates.length) {
+                throw new Error('Serverless model payload missing loader data');
+            }
+
+            const collections = [];
+            const seen = new WeakSet();
+            const collectedNodes = new WeakSet();
+
+            const pushCandidate = (item) => {
+                if (!item || typeof item !== 'object') return;
+                if (collectedNodes.has(item)) return;
+                collectedNodes.add(item);
+                collections.push(item);
+            };
+
+            const collectFromValue = (value) => {
+                if (!value || typeof value !== 'object') return;
+                if (seen.has(value)) return;
+                seen.add(value);
+
+                if (Array.isArray(value)) {
+                    value.forEach(item => {
+                        if (item && typeof item === 'object') {
+                            pushCandidate(item);
+                            collectFromValue(item);
+                        }
+                    });
+                    return;
+                }
+
+                const candidateArrays = [
+                    value.serverlessModels,
+                    value.serverless_models,
+                    value.models,
+                    value.modelCards,
+                    value.model_cards,
+                    value.availableModels,
+                    value.available_models
+                ];
+                candidateArrays.forEach(array => {
+                    if (Array.isArray(array)) {
+                        array.forEach(item => {
+                            pushCandidate(item);
+                            collectFromValue(item);
+                        });
+                    }
+                });
+
+                if (value.models?.edges) {
+                    value.models.edges.forEach(edge => {
+                        if (edge?.node && typeof edge.node === 'object') {
+                            pushCandidate(edge.node);
+                            collectFromValue(edge.node);
+                        }
+                    });
+                }
+
+                if (value.models?.nodes) {
+                    value.models.nodes.forEach(node => {
+                        if (node && typeof node === 'object') {
+                            pushCandidate(node);
+                            collectFromValue(node);
+                        }
+                    });
+                }
+
+                if (Array.isArray(value.items)) {
+                    value.items.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.collections)) {
+                    value.collections.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.modelCollections)) {
+                    value.modelCollections.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.results)) {
+                    value.results.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.data)) {
+                    value.data.forEach(item => collectFromValue(item));
+                }
+                if (value.collection) {
+                    collectFromValue(value.collection);
+                }
+                if (value.data && typeof value.data === 'object') {
+                    collectFromValue(value.data);
+                }
+
+                Object.values(value).forEach(child => {
+                    if (child && typeof child === 'object') {
+                        collectFromValue(child);
+                    }
+                });
+            };
+
+            loaderDataCandidates.forEach(candidate => collectFromValue(candidate));
+
+            if (!collections.length) throw new Error('Serverless model payload did not include any models');
+            return collections;
+        }
+
+        function applyServerlessModels(modelsData, { initialLoad = false } = {}) {
+            if (!modelsData) return;
+
+            serverlessModelsState = {
+                chat: Array.isArray(modelsData.chat) ? modelsData.chat : [],
+                vision: Array.isArray(modelsData.vision) ? modelsData.vision : []
+            };
+            serverlessModelPaths = new Set([
+                ...serverlessModelsState.chat.map(model => model.id),
+                ...serverlessModelsState.vision.map(model => model.id)
+            ]);
+
+            const customGroup = getOptgroupByKey(chatModelSelect, 'custom');
+            if (customGroup && serverlessModelPaths.size) {
+                const customOptions = Array.from(customGroup.querySelectorAll('option'));
+                const storedCustom = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
+                const retainedValues = [];
+                const existingValues = new Set();
+                let removed = false;
+
+                customOptions.forEach(option => {
+                    if (serverlessModelPaths.has(option.value)) {
+                        retainedValues.push(option.value);
+                        existingValues.add(option.value);
+                    } else {
+                        option.remove();
+                        removed = true;
+                    }
+                });
+
+                storedCustom.forEach(value => {
+                    if (serverlessModelPaths.has(value) && !existingValues.has(value)) {
+                        addModelOption(value, { allowNonServerless: true });
+                        retainedValues.push(value);
+                        existingValues.add(value);
+                    }
+                });
+
+                if (removed || retainedValues.length !== storedCustom.length) {
+                    localStorage.setItem('fireworks_custom_models', JSON.stringify(retainedValues));
+                }
+            }
+
+            const previousChatValue = chatModelSelect?.value;
+            const previousChatLabel = chatModelSelect?.selectedOptions?.[0]?.textContent || describeModelValue(previousChatValue);
+            const previousVisionValue = imageModelSelect?.value;
+            const previousVisionLabel = imageModelSelect?.selectedOptions?.[0]?.textContent || describeModelValue(previousVisionValue);
+
+            populateSelectGroup(chatModelSelect, 'serverless-chat', serverlessModelsState.chat);
+            populateSelectGroup(imageModelSelect, 'serverless-vision', serverlessModelsState.vision);
+
+            removePlaceholderOption(chatModelSelect);
+            removePlaceholderOption(imageModelSelect);
+
+            if (chatModelSelect && !chatModelSelect.value && serverlessModelsState.chat.length) {
+                chatModelSelect.value = serverlessModelsState.chat[0].id;
+            }
+            if (imageModelSelect && !imageModelSelect.value && serverlessModelsState.vision.length) {
+                imageModelSelect.value = serverlessModelsState.vision[0].id;
+            }
+
+            const missingChat = previousChatValue && !isSelectValueAvailable(chatModelSelect, previousChatValue) && serverlessModelsState.chat.length;
+            if (missingChat) {
+                chatModelSelect.value = serverlessModelsState.chat[0].id;
+                saveLastUsedModel(chatModelSelect.value);
+                showModelToast('chat', previousChatLabel, serverlessModelsState.chat);
+            }
+
+            const missingVision = previousVisionValue && !isSelectValueAvailable(imageModelSelect, previousVisionValue) && serverlessModelsState.vision.length;
+            if (missingVision) {
+                imageModelSelect.value = serverlessModelsState.vision[0].id;
+                saveLastUsedModel(imageModelSelect.value);
+                showModelToast('vision', previousVisionLabel, serverlessModelsState.vision);
+            }
+
+            if (!missingChat && !missingVision && !initialLoad) {
+                hideModelToast();
+            }
+        }
+
+        async function refreshServerlessModels({ initialLoad = false } = {}) {
+            try {
+                const response = await fetch(SERVERLESS_MODELS_URL, { headers: { 'Accept': 'text/html' } });
+                if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+                const html = await response.text();
+                const rawModels = parseServerlessModelsFromHtml(html);
+                const categorized = categorizeServerlessModels(rawModels);
+
+                if (!categorized.chat.length && !categorized.vision.length) {
+                    throw new Error('No serverless models were returned by the provider');
+                }
+
+                localStorage.setItem(SERVERLESS_MODELS_CACHE_KEY, JSON.stringify(categorized));
+                localStorage.setItem(SERVERLESS_MODELS_CACHE_TIME_KEY, new Date().toISOString());
+                applyServerlessModels(categorized, { initialLoad });
+                return true;
+            } catch (error) {
+                console.error('Failed to refresh serverless models:', error);
+                const cachedModels = loadServerlessModelsFromCache();
+                if (cachedModels) {
+                    applyServerlessModels(cachedModels, { initialLoad });
+                } else {
+                    if (chatModelSelect) {
+                        chatModelSelect.innerHTML = '<option value="" disabled selected>Unable to load serverless chat models</option>';
+                    }
+                    if (imageModelSelect) {
+                        imageModelSelect.innerHTML = '<option value="" disabled selected>Unable to load serverless vision models</option>';
+                    }
+                }
+                return false;
+            }
+        }
+
+        function enforceModelSelection(select, desiredValue, context) {
+            if (!select || !desiredValue) return false;
+            if (isSelectValueAvailable(select, desiredValue)) {
+                select.value = desiredValue;
+                return true;
+            }
+
+            const options = context === 'vision' ? serverlessModelsState.vision : serverlessModelsState.chat;
+            if (options.length) {
+                select.value = options[0].id;
+                saveLastUsedModel(select.value);
+                showModelToast(context === 'vision' ? 'vision' : 'chat', describeModelValue(desiredValue), options);
+            }
+            return false;
+        }
 
         function updateTtsToggleLabel() {
             if (!ttsToggleLabel) return;
@@ -459,24 +1157,37 @@
         function populateVoiceOptions() {
             if (!supportsSpeechSynthesis || !voiceSelect) return;
 
-            availableVoices = window.speechSynthesis.getVoices();
-            if (!availableVoices.length) {
+            const allVoices = window.speechSynthesis.getVoices();
+            if (!allVoices.length) {
                 voiceSelect.innerHTML = '<option value="">Loading voices…</option>';
                 voiceSelect.disabled = true;
                 return;
             }
 
-            availableVoices.sort((a, b) => {
+            const filteredVoices = allVoices.filter(voice => {
+                const lang = voice.lang ? voice.lang.toLowerCase() : '';
+                return lang.startsWith('en') || lang.startsWith('de');
+            });
+
+            if (!filteredVoices.length) {
+                availableVoices = [];
+                voiceSelect.innerHTML = '<option value="">No English or German voices available</option>';
+                voiceSelect.disabled = true;
+                return;
+            }
+
+            filteredVoices.sort((a, b) => {
                 const preference = getPreferredVoiceScore(a) - getPreferredVoiceScore(b);
                 if (preference !== 0) return preference;
                 if (a.lang === b.lang) return a.name.localeCompare(b.name);
                 return a.lang.localeCompare(b.lang);
             });
 
+            availableVoices = filteredVoices;
             voiceSelect.innerHTML = '';
             const autoOption = document.createElement('option');
             autoOption.value = '';
-            autoOption.textContent = 'Auto (best available)';
+            autoOption.textContent = 'Auto (Recommended)';
             voiceSelect.appendChild(autoOption);
 
             availableVoices.forEach(voice => {
@@ -1494,42 +2205,66 @@
 		
 
         // --- Event Listeners ---
-        const addModelOption = (modelPath) => {
-            if (!modelPath) return;
+        const addModelOption = (modelPath, { allowNonServerless = false } = {}) => {
+            const trimmedPath = (modelPath || '').trim();
+            if (!trimmedPath) return false;
+
             const existingOptions = Array.from(chatModelSelect.options).map(opt => opt.value);
-            if (existingOptions.includes(modelPath)) {
-                if (document.activeElement.id === 'new-model-input') alert('This model is already in the list.');
-                return;
+            if (existingOptions.includes(trimmedPath)) {
+                if (document.activeElement === newModelInput) {
+                    alert('This model is already in the list.');
+                }
+                return false;
             }
-            const modelName = modelPath.split('/').pop();
+
+            if (!allowNonServerless && !serverlessModelPaths.size) {
+                if (document.activeElement === newModelInput) {
+                    alert('Serverless model list is still loading. Please try again in a moment.');
+                }
+                return false;
+            }
+
+            if (!allowNonServerless && serverlessModelPaths.size && !serverlessModelPaths.has(trimmedPath)) {
+                if (document.activeElement === newModelInput) {
+                    alert('This model is not currently available as a serverless deployment.');
+                }
+                return false;
+            }
+
+            const modelName = trimmedPath.split('/').pop();
             const option = document.createElement('option');
-            option.value = modelPath;
+            option.value = trimmedPath;
             option.textContent = modelName;
-            const generalOptgroup = chatModelSelect.querySelector('optgroup[label="General Chat Models"]');
-            if (generalOptgroup) generalOptgroup.appendChild(option);
+            const customGroup = getOptgroupByKey(chatModelSelect, 'custom');
+            if (customGroup) {
+                customGroup.appendChild(option);
+            } else {
+                chatModelSelect.appendChild(option);
+            }
+            return true;
         };
 
         modelMenuButton.addEventListener('click', (e) => {
             e.stopPropagation();
             modelMenu.classList.toggle('hidden');
         });
-		useLastModelButton.addEventListener('click', () => {
-			const lastModel = localStorage.getItem('fireworks_last_model');
-			if (lastModel) {
-				chatModelSelect.value = lastModel;
-				saveLastUsedModel(lastModel);
-				useLastModelButton.textContent = 'Applied!';
-				setTimeout(() => {
-					useLastModelButton.textContent = 'Use Last Model';
-					modelMenu.classList.add('hidden');
-				}, 1000);
-			} else {
-				useLastModelButton.textContent = 'No last model found';
-				setTimeout(() => {
-					useLastModelButton.textContent = 'Use Last Model';
-				}, 1500);
-			}
-		});
+        useLastModelButton.addEventListener('click', () => {
+            const lastModel = localStorage.getItem('fireworks_last_model');
+            if (lastModel) {
+                const available = enforceModelSelection(chatModelSelect, lastModel, 'chat');
+                useLastModelButton.textContent = available ? 'Applied!' : 'Model unavailable';
+                if (available) saveLastUsedModel(chatModelSelect.value);
+                setTimeout(() => {
+                    useLastModelButton.textContent = 'Use Last Model';
+                    modelMenu.classList.add('hidden');
+                }, 1200);
+            } else {
+                useLastModelButton.textContent = 'No last model found';
+                setTimeout(() => {
+                    useLastModelButton.textContent = 'Use Last Model';
+                }, 1500);
+            }
+        });
 
         setDefaultModelButton.addEventListener('click', () => {
             localStorage.setItem('fireworks_default_model', chatModelSelect.value);
@@ -1544,15 +2279,38 @@
             e.preventDefault();
             const newModelPath = newModelInput.value.trim();
             if (newModelPath) {
-                addModelOption(newModelPath);
-                let customModels = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
-                if (!customModels.includes(newModelPath)) {
-                    customModels.push(newModelPath);
-                    localStorage.setItem('fireworks_custom_models', JSON.stringify(customModels));
+                const added = addModelOption(newModelPath);
+                if (added) {
+                    let customModels = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
+                    if (!customModels.includes(newModelPath)) {
+                        customModels.push(newModelPath);
+                        localStorage.setItem('fireworks_custom_models', JSON.stringify(customModels));
+                    }
+                    newModelInput.value = '';
                 }
-                newModelInput.value = '';
             }
         });
+
+        if (modelToastClose) {
+            modelToastClose.addEventListener('click', hideModelToast);
+        }
+
+        if (modelToastApply) {
+            modelToastApply.addEventListener('click', () => {
+                if (!modelAvailabilityToast || modelAvailabilityToast.classList.contains('hidden')) return;
+                const context = modelAvailabilityToast.dataset.context === 'vision' ? 'vision' : 'chat';
+                const selectedValue = modelToastSelect?.value;
+                if (!selectedValue) return;
+
+                if (context === 'vision') {
+                    if (imageModelSelect) imageModelSelect.value = selectedValue;
+                } else if (chatModelSelect) {
+                    chatModelSelect.value = selectedValue;
+                }
+                saveLastUsedModel(selectedValue);
+                hideModelToast();
+            });
+        }
         settingsButton.addEventListener('click', () => settingsModal.classList.remove('hidden'));
         closeSettingsButton.addEventListener('click', () => settingsModal.classList.add('hidden'));
         settingsModal.addEventListener('click', (e) => {
@@ -1603,6 +2361,10 @@
             voiceSelect.innerHTML = '<option value="">Voice options unavailable</option>';
             voiceSelect.disabled = true;
             if (stopTtsButton) stopTtsButton.disabled = true;
+            if (ttsConfigButton) {
+                ttsConfigButton.disabled = true;
+                ttsConfigButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
         }
 
         if (ttsToggle) {
@@ -1629,6 +2391,47 @@
                 }
             });
         }
+
+        function openTtsModal() {
+            if (!ttsModal) return;
+            ttsModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            if (voiceSelect && !voiceSelect.disabled) {
+                setTimeout(() => voiceSelect.focus(), 0);
+            }
+        }
+
+        function closeTtsModal() {
+            if (!ttsModal) return;
+            ttsModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        if (ttsConfigButton) {
+            ttsConfigButton.addEventListener('click', () => {
+                openTtsModal();
+            });
+        }
+
+        [ttsModalClose, ttsModalCancel].forEach(button => {
+            if (button) {
+                button.addEventListener('click', () => {
+                    closeTtsModal();
+                });
+            }
+        });
+
+        if (ttsModalOverlay) {
+            ttsModalOverlay.addEventListener('click', () => {
+                closeTtsModal();
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && ttsModal && !ttsModal.classList.contains('hidden')) {
+                closeTtsModal();
+            }
+        });
 
         if (stopTtsButton) {
             if (supportsSpeechSynthesis) {
@@ -1709,35 +2512,63 @@
             advancedSettingsToggle.querySelector('svg').classList.toggle('rotate-180');
         });
 
-       function initializeApp() {
-			const savedKey = loadApiKey();
-			if (savedKey) apiKeyInput.value = savedKey;
-			const savedPrompt = loadSystemPrompt();
-			systemPromptTextarea.value = savedPrompt || 'You are a helpful assistant.';
-			const customModels = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
-			customModels.forEach(addModelOption);
-			
-			const defaultModel = localStorage.getItem('fireworks_default_model');
-			const lastModel = localStorage.getItem('fireworks_last_model');
-			
-			if (defaultModel) {
-				chatModelSelect.value = defaultModel;
-			} else if (lastModel) {
-				chatModelSelect.value = lastModel;
-			}
-			
-			const chats = getSavedChats();
-			if (chats.length === 0) {
-				startNewChat();
-			} else {
-				const lastChatId = chats.sort((a,b) => b.id - a.id)[0].id;
-				loadChat(lastChatId);
-			}
-			updateUIMode('chat');
-		}
-        initializeApp();
+       async function initializeApp() {
+            const savedKey = loadApiKey();
+            if (savedKey) apiKeyInput.value = savedKey;
+            const savedPrompt = loadSystemPrompt();
+            systemPromptTextarea.value = savedPrompt || 'You are a helpful assistant.';
+
+            await refreshServerlessModels({ initialLoad: true });
+
+            const customModels = JSON.parse(localStorage.getItem('fireworks_custom_models')) || [];
+            const validCustomModels = [];
+            customModels.forEach(modelPath => {
+                if (addModelOption(modelPath)) {
+                    validCustomModels.push(modelPath);
+                }
+            });
+            if (serverlessModelPaths.size && validCustomModels.length !== customModels.length) {
+                localStorage.setItem('fireworks_custom_models', JSON.stringify(validCustomModels));
+            }
+
+            const defaultModel = localStorage.getItem('fireworks_default_model');
+            const lastModel = localStorage.getItem('fireworks_last_model');
+
+            let selectionApplied = false;
+            if (defaultModel) {
+                selectionApplied = enforceModelSelection(chatModelSelect, defaultModel, 'chat');
+            }
+            if (!selectionApplied && lastModel) {
+                selectionApplied = enforceModelSelection(chatModelSelect, lastModel, 'chat');
+            }
+            if (!selectionApplied && serverlessModelsState.chat.length && chatModelSelect) {
+                chatModelSelect.value = serverlessModelsState.chat[0].id;
+            }
+
+            if (!imageModelSelect.value && serverlessModelsState.vision.length) {
+                imageModelSelect.value = serverlessModelsState.vision[0].id;
+            }
+
+            if (!serverlessRefreshTimerId) {
+                serverlessRefreshTimerId = setInterval(() => refreshServerlessModels(), SERVERLESS_REFRESH_INTERVAL);
+            }
+
+            const chats = getSavedChats();
+            if (chats.length === 0) {
+                startNewChat();
+            } else {
+                const lastChatId = chats.sort((a,b) => b.id - a.id)[0].id;
+                loadChat(lastChatId);
+            }
+            updateUIMode('chat');
+        }
+        try {
+            await initializeApp();
+        } catch (error) {
+            console.error('Failed to initialize the application:', error);
+        }
     });
-	
+
 </script>
 </body>
 </html>
