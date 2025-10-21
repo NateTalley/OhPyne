@@ -586,19 +586,154 @@
         function flattenDescriptors(...sources) {
             const result = [];
             const stack = [...sources];
+            const visited = new WeakSet();
             while (stack.length) {
                 const value = stack.pop();
                 if (value == null) continue;
-                if (Array.isArray(value)) {
-                    stack.push(...value);
-                } else if (typeof value === 'object') {
-                    stack.push(...Object.values(value));
-                } else {
-                    const text = String(value).trim();
-                    if (text) result.push(text.toLowerCase());
+                if (typeof value === 'object') {
+                    if (visited.has(value)) continue;
+                    visited.add(value);
+                    if (Array.isArray(value)) {
+                        stack.push(...value);
+                    } else {
+                        stack.push(...Object.values(value));
+                    }
+                    continue;
                 }
+                const text = String(value).trim();
+                if (text) result.push(text.toLowerCase());
             }
             return result;
+        }
+
+        function tryParseJsonLike(source) {
+            if (!source) return null;
+            try {
+                return JSON.parse(source);
+            } catch (jsonError) {
+                try {
+                    return Function('\"use strict\";return (' + source + ')')();
+                } catch (evalError) {
+                    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+                        console.error('Failed to evaluate serverless model payload:', {
+                            jsonError,
+                            evalError,
+                            sourcePreview: source.slice(0, 200)
+                        });
+                    }
+                    throw new Error('Failed to parse serverless model payload');
+                }
+            }
+        }
+
+        function extractRemixContextValue(source) {
+            if (!source) return null;
+            const startBrace = source.indexOf('{');
+            if (startBrace === -1) return null;
+
+            let index = startBrace;
+            const length = source.length;
+            let depth = 0;
+            let inString = false;
+            let stringQuote = '';
+            let escaped = false;
+            let result = '';
+
+            for (; index < length; index++) {
+                const char = source[index];
+                result += char;
+
+                if (inString) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === stringQuote) {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (char === '\"' || char === '\'' || char === '`') {
+                    inString = true;
+                    stringQuote = char;
+                    continue;
+                }
+
+                if (char === '{' || char === '[') {
+                    depth += 1;
+                    continue;
+                }
+
+                if (char === '}' || char === ']') {
+                    depth -= 1;
+                    if (depth === 0) {
+                        break;
+                    }
+                }
+            }
+
+            return depth === 0 ? result.trim() : null;
+        }
+
+        function isServerlessDeployment(rawModel) {
+            if (!rawModel || typeof rawModel !== 'object') return false;
+
+            const booleanFlags = [
+                rawModel.serverless,
+                rawModel.isServerless,
+                rawModel.is_serverless,
+                rawModel.latestVersion?.isServerless,
+                rawModel.latest_version?.is_serverless
+            ];
+            if (booleanFlags.some(flag => flag === true)) {
+                return true;
+            }
+
+            const descriptors = flattenDescriptors(
+                rawModel.deploymentType,
+                rawModel.deployment_type,
+                rawModel.deploymentTypes,
+                rawModel.deployment_types,
+                rawModel.availableDeployments,
+                rawModel.availableDeploymentTypes,
+                rawModel.available_deployments,
+                rawModel.available_deployment_types,
+                rawModel.deploymentOptions,
+                rawModel.deployment_options,
+                rawModel.deployments,
+                rawModel.model?.deploymentType,
+                rawModel.model?.deploymentTypes,
+                rawModel.model?.deployment_type,
+                rawModel.model?.deployment_types,
+                rawModel.modelCard?.deploymentType,
+                rawModel.modelCard?.deploymentTypes,
+                rawModel.model_card?.deployment_type,
+                rawModel.model_card?.deployment_types,
+                rawModel.latestVersion?.deploymentType,
+                rawModel.latestVersion?.deploymentTypes,
+                rawModel.latestVersion?.deployment_type,
+                rawModel.latestVersion?.deployment_types,
+                rawModel.latestVersion?.model?.deploymentType,
+                rawModel.latestVersion?.model?.deploymentTypes,
+                rawModel.latest_version?.deployment_type,
+                rawModel.latest_version?.deployment_types,
+                rawModel.latest_version?.available_deployments,
+                rawModel.latest_version?.deployment_options,
+                rawModel.latest_version?.model?.deployment_type,
+                rawModel.latest_version?.model?.deployment_types,
+                rawModel.latest_version?.deployment?.type,
+                rawModel.latest_version?.deployment?.deployment_type,
+                rawModel.deployment?.type,
+                rawModel.deployment?.deployment_type,
+                rawModel.deployment?.deploymentType,
+                rawModel.deployment?.kind,
+                rawModel.tags,
+                rawModel.capabilities,
+                rawModel
+            );
+
+            return descriptors.some(descriptor => descriptor.includes('serverless'));
         }
 
         function buildServerlessEntry(rawModel) {
@@ -691,6 +826,7 @@
         function categorizeServerlessModels(rawModels) {
             const uniqueEntries = new Map();
             (rawModels || []).forEach(rawModel => {
+                if (!isServerlessDeployment(rawModel)) return;
                 const entry = buildServerlessEntry(rawModel);
                 if (!entry) return;
                 if (uniqueEntries.has(entry.id)) {
@@ -718,43 +854,159 @@
 
         function parseServerlessModelsFromHtml(html) {
             if (!html) throw new Error('Empty response when loading serverless models');
+
             const marker = 'window.__remixContext =';
-            const start = html.indexOf(marker);
-            if (start === -1) throw new Error('Unable to locate serverless model data (no Remix context found)');
+            let contextPayload = null;
 
-            const afterMarker = html.slice(start + marker.length);
-            const end = afterMarker.indexOf('</script>');
-            if (end === -1) throw new Error('Unable to locate serverless model data (unterminated script tag)');
+            const extractFromScript = (scriptContent) => {
+                if (!scriptContent || !scriptContent.includes(marker)) return null;
+                const afterMarker = scriptContent.slice(scriptContent.indexOf(marker) + marker.length);
+                return extractRemixContextValue(afterMarker);
+            };
 
-            let jsonText = afterMarker.slice(0, end).trim();
-            if (jsonText.endsWith(';')) jsonText = jsonText.slice(0, -1);
-
-            let parsed;
-            try {
-                parsed = JSON.parse(jsonText);
-            } catch (error) {
-                throw new Error('Failed to parse serverless model payload');
+            if (typeof DOMParser !== 'undefined') {
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    contextPayload = Array.from(doc.scripts)
+                        .map(script => extractFromScript(script.textContent || ''))
+                        .find(Boolean) || null;
+                } catch (domError) {
+                    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+                        console.warn('Failed to parse serverless model markup with DOMParser:', domError);
+                    }
+                }
             }
 
-            const loaderData = parsed?.state?.loaderData;
-            if (!loaderData || typeof loaderData !== 'object') throw new Error('Serverless model payload missing loader data');
+            if (!contextPayload) {
+                const markerIndex = html.indexOf(marker);
+                if (markerIndex === -1) {
+                    throw new Error('Unable to locate serverless model data (no Remix context found)');
+                }
+                const afterMarker = html.slice(markerIndex + marker.length);
+                contextPayload = extractRemixContextValue(afterMarker);
+            }
+
+            if (!contextPayload) {
+                throw new Error('Unable to locate serverless model data (unterminated script tag)');
+            }
+
+            const parsed = tryParseJsonLike(contextPayload);
+            const loaderDataCandidates = [];
+
+            if (parsed?.state?.loaderData && typeof parsed.state.loaderData === 'object') {
+                loaderDataCandidates.push(parsed.state.loaderData);
+            }
+            if (parsed?.loaderData && typeof parsed.loaderData === 'object') {
+                loaderDataCandidates.push(parsed.loaderData);
+            }
+            if (parsed?.data && typeof parsed.data === 'object') {
+                loaderDataCandidates.push(parsed.data);
+            }
+            if (Array.isArray(parsed?.state?.matches)) {
+                parsed.state.matches.forEach(match => {
+                    if (match?.data && typeof match.data === 'object') {
+                        loaderDataCandidates.push(match.data);
+                    }
+                });
+            }
+
+            if (!loaderDataCandidates.length) {
+                throw new Error('Serverless model payload missing loader data');
+            }
 
             const collections = [];
-            Object.values(loaderData).forEach(value => {
-                if (!value) return;
+            const seen = new WeakSet();
+            const collectedNodes = new WeakSet();
+
+            const pushCandidate = (item) => {
+                if (!item || typeof item !== 'object') return;
+                if (collectedNodes.has(item)) return;
+                collectedNodes.add(item);
+                collections.push(item);
+            };
+
+            const collectFromValue = (value) => {
+                if (!value || typeof value !== 'object') return;
+                if (seen.has(value)) return;
+                seen.add(value);
+
                 if (Array.isArray(value)) {
-                    collections.push(...value);
+                    value.forEach(item => {
+                        if (item && typeof item === 'object') {
+                            pushCandidate(item);
+                            collectFromValue(item);
+                        }
+                    });
                     return;
                 }
-                if (Array.isArray(value.models)) collections.push(...value.models);
-                if (Array.isArray(value.modelCards)) collections.push(...value.modelCards);
+
+                const candidateArrays = [
+                    value.serverlessModels,
+                    value.serverless_models,
+                    value.models,
+                    value.modelCards,
+                    value.model_cards,
+                    value.availableModels,
+                    value.available_models
+                ];
+                candidateArrays.forEach(array => {
+                    if (Array.isArray(array)) {
+                        array.forEach(item => {
+                            pushCandidate(item);
+                            collectFromValue(item);
+                        });
+                    }
+                });
+
                 if (value.models?.edges) {
                     value.models.edges.forEach(edge => {
-                        if (edge?.node) collections.push(edge.node);
+                        if (edge?.node && typeof edge.node === 'object') {
+                            pushCandidate(edge.node);
+                            collectFromValue(edge.node);
+                        }
                     });
                 }
-                if (Array.isArray(value.serverlessModels)) collections.push(...value.serverlessModels);
-            });
+
+                if (value.models?.nodes) {
+                    value.models.nodes.forEach(node => {
+                        if (node && typeof node === 'object') {
+                            pushCandidate(node);
+                            collectFromValue(node);
+                        }
+                    });
+                }
+
+                if (Array.isArray(value.items)) {
+                    value.items.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.collections)) {
+                    value.collections.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.modelCollections)) {
+                    value.modelCollections.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.results)) {
+                    value.results.forEach(item => collectFromValue(item));
+                }
+                if (Array.isArray(value.data)) {
+                    value.data.forEach(item => collectFromValue(item));
+                }
+                if (value.collection) {
+                    collectFromValue(value.collection);
+                }
+                if (value.data && typeof value.data === 'object') {
+                    collectFromValue(value.data);
+                }
+
+                Object.values(value).forEach(child => {
+                    if (child && typeof child === 'object') {
+                        collectFromValue(child);
+                    }
+                });
+            };
+
+            loaderDataCandidates.forEach(candidate => collectFromValue(candidate));
 
             if (!collections.length) throw new Error('Serverless model payload did not include any models');
             return collections;
