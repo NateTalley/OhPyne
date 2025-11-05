@@ -526,6 +526,11 @@
                 imageModelSelector.style.display = 'block';
                 addFileButton.style.display = 'block';
                 promptInput.placeholder = "Describe the image you want to create (optional: attach a reference image)...";
+                
+                // Remove non-image attachments when switching to Image mode
+                if (attachedFile && !attachedImage) {
+                    removeAttachedFile();
+                }
             }
         }
 
@@ -1231,7 +1236,8 @@
             loadingIndicator.classList.remove('hidden');
             
             // Show user's prompt with reference image if attached
-            addMessageToUI('user', userInput || '(Reference image for generation)', attachedImage ? imagePreview.src : null, attachedImage ? attachedImage.name : null); 
+            const displayText = userInput || (attachedImage ? 'Generate image from reference' : '');
+            addMessageToUI('user', displayText, attachedImage ? imagePreview.src : null, attachedImage ? attachedImage.name : null);
 
             // Get the full selected option element to access both its value and text
             const selectedOption = imageModelSelect.selectedOptions[0];
