@@ -236,7 +236,7 @@
 					</button>
 				</form>
             </div>
-            <input type="file" id="image-file-input" class="hidden" accept="image/png, image/jpeg, image/gif, image/webp, .txt, .py, .csv, .html">
+            <input type="file" id="image-file-input" class="hidden" accept="image/png, image/jpeg, image/gif, image/webp, .txt, .py, .csv, .html, .js, .json, .jsonl">
         </div>
     </div>
 
@@ -876,7 +876,7 @@
 			if (!file) return;
 
 			const imageTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-			const textExtensions = ['.txt', '.py', '.csv', '.html'];
+			const textExtensions = ['.txt', '.py', '.csv', '.html', '.js', '.json', '.jsonl'];
 			const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
 
 			// Handle image files
@@ -924,7 +924,7 @@
 			} 
 			// Handle unsupported files
 			else {
-				alert('Unsupported file type. Please upload an image, .txt, .py, .csv, or .html file.');
+				alert('Unsupported file type. Please upload an image, .txt, .py, .csv, .html, .js, .json, or .jsonl file.');
 			}
 		}
 
