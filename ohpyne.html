@@ -524,9 +524,13 @@
                 chatHistoryContainer.style.display = 'none';
                 chatModelSelector.style.display = 'none';
                 imageModelSelector.style.display = 'block';
-                addFileButton.style.display = 'none';
-                promptInput.placeholder = "Describe the image you want to create...";
-                removeAttachedFile();
+                addFileButton.style.display = 'block';
+                promptInput.placeholder = "Describe the image you want to create (optional: attach a reference image)...";
+                
+                // Remove non-image attachments when switching to Image mode
+                if (attachedFile && !attachedImage) {
+                    removeAttachedFile();
+                }
             }
         }
 
@@ -879,6 +883,12 @@
 			const textExtensions = ['.txt', '.py', '.csv', '.html'];
 			const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
 
+			// In image mode, only allow image files
+			if (currentMode === 'image' && !imageTypes.includes(file.type)) {
+				alert('In Image mode, only image files are supported for reference images.');
+				return;
+			}
+
 			// Handle image files
 			if (imageTypes.includes(file.type)) {
 				const reader = new FileReader();
@@ -1087,6 +1097,13 @@
 			const workflowUrl = `${API_IMAGE_WORKFLOW_URL}/${modelPath}`;
 			
 			try {
+				const requestBody = { prompt: userInput };
+				
+				// Add reference image if attached
+				if (attachedImage) {
+					requestBody.input_image = `data:${attachedImage.mimeType};base64,${attachedImage.base64}`;
+				}
+				
 				const submitResponse = await fetch(workflowUrl, {
 					method: 'POST',
 					headers: { 
@@ -1094,7 +1111,7 @@
 						'Accept': 'application/json', 
 						'Authorization': `Bearer ${apiKey}` 
 					},
-					body: JSON.stringify({ prompt: userInput })
+					body: JSON.stringify(requestBody)
 				});
 				
 				if (!submitResponse.ok) {
@@ -1169,6 +1186,18 @@
 // New helper for the 1-step DIRECT workflow (Playground models)
         async function getImageResponseDirect(modelPath, userInput, apiKey) {
 			const endpointUrl = `${API_IMAGE_GEN_URL}/${modelPath}`;
+			
+			const requestBody = {
+				prompt: userInput,
+				output_image_format: "PNG",
+				steps: parseInt(stepsSlider.value, 10)
+			};
+			
+			// Add reference image if attached
+			if (attachedImage) {
+				requestBody.input_image = `data:${attachedImage.mimeType};base64,${attachedImage.base64}`;
+			}
+			
             const response = await fetch(endpointUrl, {
                 method: 'POST',
                 headers: {
@@ -1176,11 +1205,7 @@
                     'Accept': 'image/png', // We ask for the image directly
                     'Authorization': `Bearer ${apiKey}`
                 },
-                body: JSON.stringify({
-                    prompt: userInput,
-                    output_image_format: "PNG", // Request PNG format
-                    steps: parseInt(stepsSlider.value, 10) // <-- THIS LINE IS NEW
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -1203,10 +1228,16 @@
                 return;
             }
             const userInput = promptInput.value.trim();
-            if (!userInput) return;
+            if (!userInput && !attachedImage) {
+                addMessageToUI('error', 'Please provide a prompt or attach a reference image.');
+                return;
+            }
 
             loadingIndicator.classList.remove('hidden');
-            addMessageToUI('user', userInput); 
+            
+            // Show user's prompt with reference image if attached
+            const displayText = userInput || (attachedImage ? 'Generate image from reference' : '');
+            addMessageToUI('user', displayText, attachedImage ? imagePreview.src : null, attachedImage ? attachedImage.name : null);
 
             // Get the full selected option element to access both its value and text
             const selectedOption = imageModelSelect.selectedOptions[0];
