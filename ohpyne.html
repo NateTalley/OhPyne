@@ -961,13 +961,11 @@
 			document.getElementById('remove-image-button').addEventListener('click', removeAttachedFile);
 		}
 
-        // Fix the getAIResponse function - improve error handling:
 		async function getAIResponse() {
-            // Get the selected option element to check its group
             const selectedOption = chatModelSelect.selectedOptions[0];
             const isOllamaModel = selectedOption.parentElement.label.includes('Ollama');
             
-            // Define API details based on model type
+            // Setup API URL and Key
             const OLLAMA_URL = 'http://localhost:11434/api/chat';
             const API_URL = isOllamaModel ? OLLAMA_URL : API_CHAT_URL;
             const apiKey = apiKeyInput.value.trim();
@@ -981,29 +979,26 @@
 
             try {
                 const modelPath = chatModelSelect.value;
-                if (!isOllamaModel) {
-                    saveLastUsedModel(modelPath);
-                }
-                
-                // --- The rest of the function is mostly the same ---
-                const visionModels = ['accounts/fireworks/models/firefunction-v2', 'accounts/fireworks/models/llama-v3p1-405b-instruct'];
-                const isVisionModel = visionModels.includes(modelPath);
+                if (!isOllamaModel) saveLastUsedModel(modelPath);
 
+                // Prepare User Message
                 let userInput = promptInput.value.trim();
                 const userMessage = { role: 'user' };
-
+                
+                // Handle Images & Files
                 if (attachedImage) {
-                    if (!isVisionModel && !isOllamaModel) { // Ollama LLaVA models could handle this
-                        throw new Error('An image is attached, but the selected model does not support vision.');
+                    const visionModels = ['accounts/fireworks/models/firefunction-v2', 'accounts/fireworks/models/llama-v3p1-405b-instruct'];
+                    if (!visionModels.includes(modelPath) && !isOllamaModel) {
+                         throw new Error('Selected model does not support vision.');
                     }
-                    const contentArr = [{ type: 'text', text: userInput }];
-                    // Ollama expects images as a separate key in the message object
                     if (isOllamaModel) {
                         userMessage.images = [attachedImage.base64];
                         userMessage.content = userInput;
                     } else {
-                        contentArr.unshift({ type: 'image_url', image_url: { url: `data:${attachedImage.mimeType};base64,${attachedImage.base64}` } });
-                        userMessage.content = contentArr;
+                        userMessage.content = [
+                            { type: 'image_url', image_url: { url: `data:${attachedImage.mimeType};base64,${attachedImage.base64}` } },
+                            { type: 'text', text: userInput }
+                        ];
                     }
                     userMessage.fileName = attachedImage.name;
                 } else {
@@ -1011,81 +1006,123 @@
                         userInput = `File: "${attachedFile.name}"\n---\n${attachedFile.content}\n---\n\n` + userInput;
                         userMessage.fileName = attachedFile.name;
                     }
-                    if (!userInput) { loadingIndicator.classList.add('hidden'); return; }
+                    if (!userInput && !attachedImage) { loadingIndicator.classList.add('hidden'); return; }
                     userMessage.content = userInput;
                 }
 
+                // Add User Message to UI & History
                 conversationHistory.push(userMessage);
-                addMessageToUI('user', promptInput.value.trim(), attachedImage ? imagePreview.src : null, attachedFile ? attachedFile.name : attachedImage ? attachedImage.name : null);
-                saveChatContent(activeChatId, conversationHistory);
-
+                addMessageToUI('user', promptInput.value.trim(), attachedImage ? imagePreview.src : null, attachedFile ? attachedFile.name : null);
+                
+                // Prepare Request
                 const messagesForApi = conversationHistory.map(m => {
-                    const { fileName, ...apiMsg } = m;
+                    const { fileName, ...apiMsg } = m; 
                     return apiMsg;
                 });
-                
+
                 const requestBody = {
                     model: modelPath,
                     messages: messagesForApi,
-                    stream: false, // Ollama supports streaming, but we'll keep it simple
-                    options: { // Ollama uses an 'options' object for parameters
-                        temperature: parseFloat(temperatureSlider.value),
-                        num_predict: parseInt(maxTokensSlider.value, 10),
-                        top_p: parseFloat(topPSlider.value),
-                        top_k: parseInt(topKSlider.value, 10),
-                    }
+                    stream: true, // <--- ENABLE STREAMING
+                    // Parse sliders
+                    max_tokens: parseInt(maxTokensSlider.value, 10),
+                    temperature: parseFloat(temperatureSlider.value),
+                    top_p: parseFloat(topPSlider.value),
+                    top_k: parseInt(topKSlider.value, 10),
+                    presence_penalty: parseFloat(presencePenaltySlider.value),
+                    frequency_penalty: parseFloat(frequencyPenaltySlider.value)
                 };
 
-                const headers = { 'Content-Type': 'application/json' };
-                if (!isOllamaModel) {
-                    headers['Authorization'] = `Bearer ${apiKey}`;
-                    // Flatten parameters for Fireworks API
-                    requestBody.temperature = requestBody.options.temperature;
-                    requestBody.max_tokens = requestBody.options.num_predict;
-                    // Add advanced parameters for Fireworks
-                    requestBody.top_p = parseFloat(topPSlider.value);
-                    requestBody.top_k = parseInt(topKSlider.value, 10);
-                    requestBody.presence_penalty = parseFloat(presencePenaltySlider.value);
-                    requestBody.frequency_penalty = parseFloat(frequencyPenaltySlider.value);
-                    delete requestBody.options;
+                // Adjust for Ollama format if needed
+                if (isOllamaModel) {
+                    requestBody.options = {
+                        num_predict: requestBody.max_tokens,
+                        temperature: requestBody.temperature,
+                        top_p: requestBody.top_p,
+                        top_k: requestBody.top_k
+                    };
+                    delete requestBody.max_tokens; delete requestBody.temperature;
+                    delete requestBody.top_p; delete requestBody.top_k;
+                    delete requestBody.presence_penalty; delete requestBody.frequency_penalty;
                 }
 
+                const headers = { 'Content-Type': 'application/json' };
+                if (!isOllamaModel) headers['Authorization'] = `Bearer ${apiKey}`;
+
+                // --- STREAMING FETCH ---
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: headers,
                     body: JSON.stringify(requestBody)
                 });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
-                }
 
-                const data = await response.json();
-                
-                // --- FIX: Handle different response structures ---
-                let aiMessage;
-                if (isOllamaModel) {
-                    aiMessage = data.message; // Ollama's response format: { ..., "message": { "role": "...", "content": "..." } }
-                } else {
-                    aiMessage = data.choices[0].message; // Fireworks AI response format: { ..., "choices": [ { "message": { ... } } ] }
-                }
+                if (!response.ok) throw new Error(`HTTP Error: ${await response.text()}`);
 
-                if (!aiMessage || typeof aiMessage.content === 'undefined') {
-                    console.error("Invalid AI response structure:", data);
-                    throw new Error("Received an invalid response from the AI. Check console for details.");
-                }
-                // --- END FIX ---
+                // Create placeholder UI for Assistant
+                const assistantMsgObj = { role: 'assistant', content: '' };
+                conversationHistory.push(assistantMsgObj);
                 
-                conversationHistory.push(aiMessage);
+                // We create the UI element manually so we can update it
+                const msgWrapper = createMessageElement('assistant', '');
+                chatContainer.appendChild(msgWrapper);
+                const contentDiv = msgWrapper.querySelector('.content-wrapper');
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = '';
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep the last partial line in buffer
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed) continue;
+                        if (trimmed === 'data: [DONE]') continue;
+
+                        try {
+                            let chunk = '';
+                            if (isOllamaModel) {
+                                // Ollama JSON
+                                const json = JSON.parse(trimmed);
+                                chunk = json.message?.content || '';
+                                if (json.done) saveChatContent(activeChatId, conversationHistory);
+                            } else {
+                                // Fireworks / OpenAI format (data: {...})
+                                if (trimmed.startsWith('data: ')) {
+                                    const json = JSON.parse(trimmed.slice(6));
+                                    chunk = json.choices[0].delta?.content || '';
+                                }
+                            }
+
+                            if (chunk) {
+                                fullText += chunk;
+                                assistantMsgObj.content = fullText; // Update history object
+                                // Render markdown nicely
+                                contentDiv.innerHTML = marked.parse(fullText, { gfm: true, breaks: true });
+                                // Re-apply syntax highlighting
+                                contentDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+                                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+                            }
+                        } catch (e) {
+                            console.error('Error parsing stream chunk', e);
+                        }
+                    }
+                }
+                
                 saveChatContent(activeChatId, conversationHistory);
-                addMessageToUI('assistant', aiMessage.content);
+                // Speak final result if TTS is on
+                speakText(fullText);
 
             } catch (error) {
-                console.error('Full error:', error);
-                const friendlyError = error.message.includes('Failed to fetch') ? "Could not connect to Ollama. Is the local server running?" : error.message;
-                addMessageToUI('error', `An error occurred: ${friendlyError}`);
-                conversationHistory.pop(); // Remove the user message that failed
+                console.error(error);
+                addMessageToUI('error', error.message);
+                conversationHistory.pop(); // Remove failed message
             } finally {
                 loadingIndicator.classList.add('hidden');
             }
